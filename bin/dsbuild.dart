@@ -1,12 +1,15 @@
 // major beta (3.0.0) API usage.
 // ignore_for_file: sdk_version_since
 
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dsbuild/api.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/error.dart';
+import 'package:dsbuild/model/conversation.dart';
 import 'package:dsbuild/model/descriptor.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
@@ -71,15 +74,42 @@ void main(List<String> args) async {
         hashUpdates.add(input.copyWith(hash: hash.toString()));
       }
     });
+    if (hashErrors.isNotEmpty) {
+      exit(1);
+    }
 
     // Update descriptors with any newly generated hashes.
     for (InputDescriptor input in hashUpdates) {
       dsBuild.repository.updateInputHash(input.source, input.hash!);
     }
-    if (hashErrors.isNotEmpty) {
-      exit(1);
-    }
   }
 
-  log.info("Loading input data.");
+  log.info("Performing transformations...");
+  final DateTime startTime = DateTime.timestamp();
+  Map<String, dynamic> stats = {'Total Conversations': 0, 'Elapsed': Duration};
+
+  StreamSubscription<void> progressTask =
+      Stream.periodic(Duration(seconds: 1), (count) {
+    stats['Elapsed'] = DateTime.timestamp().difference(startTime);
+    if (count % 10 == 0) {
+      log.info(jsonEncode(stats));
+    }
+  }).listen((event) {}, onDone: () {
+    stats['Elapsed'] = DateTime.timestamp().difference(startTime);
+    log.info(jsonEncode(stats));
+  });
+
+  List<Conversation> conversations = await dsBuild
+      .transformAll()
+      .map((event) {
+        stats['Total Conversations'] += 1;
+        return event;
+      })
+      .toList()
+      .whenComplete(() {
+        progressTask.cancel();
+      });
+
+  log.info("Writing outputs.");
+  dsBuild.writeAll(conversations);
 }
