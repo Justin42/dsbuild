@@ -56,7 +56,7 @@ class InputDescriptor {
   InputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
         description = data['description'],
-        source = data['source'],
+        source = Uri.parse(data['source']),
         hash = data['sha512'],
         format = data['format'],
         steps = [
