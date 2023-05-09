@@ -38,17 +38,17 @@ class DatasetDescriptor {
 }
 
 class InputDescriptor {
-  final Uri uri;
+  final String path;
   final String description;
   final String source;
   final String format;
   final List<StepDescriptor> steps;
 
   const InputDescriptor(
-      this.uri, this.description, this.source, this.format, this.steps);
+      this.path, this.description, this.source, this.format, this.steps);
 
   InputDescriptor.fromYaml(YamlMap data)
-      : uri = Uri.parse(data['uri']),
+      : path = data['path'],
         description = data['description'],
         source = data['source'],
         format = data['format'],
