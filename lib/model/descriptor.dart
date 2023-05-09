@@ -28,10 +28,10 @@ class DatasetDescriptor {
         description = data['description'],
         generateReadme = data['build']['generateReadme'],
         inputs = [
-          for (var input in data['inputs']) InputDescriptor.fromYaml(input)
+          for (var input in data['input']) InputDescriptor.fromYaml(input)
         ],
         outputs = [
-          for (var output in data['outputs']) OutputDescriptor.fromYaml(output)
+          for (var output in data['output']) OutputDescriptor.fromYaml(output)
         ];
 }
 
