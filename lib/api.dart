@@ -32,5 +32,9 @@ abstract class DsBuildApi {
   Future<OutputDescriptor> write(
       List<Conversation> conversations, OutputDescriptor output);
 
-  Stream<OutputDescriptor> writeAll(List<Conversation> conversations);
+  Stream<OutputDescriptor> writeAll(List<Conversation> conversations) async* {
+    for (OutputDescriptor output in repository.descriptor.outputs) {
+      yield await write(conversations, output);
+    }
+  }
 }

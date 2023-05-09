@@ -6,7 +6,7 @@ import 'reader.dart';
 /// - Remove conversations between more than two people.
 /// - Ensure conversation flow as human -> gpt -> human -> gpt
 class BluemoonReader extends Reader {
-  const BluemoonReader();
+  const BluemoonReader(super.config);
 
   @override
   Stream<MessageEnvelope> process(Stream<Map<String, dynamic>> jsonStream) {

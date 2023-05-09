@@ -14,5 +14,5 @@ abstract class Preprocessor {
 
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer;
 
-  Preprocessor({this.config = const {}, this.stepDescription = ''});
+  const Preprocessor(this.config, {this.stepDescription = ''});
 }

@@ -1,6 +1,10 @@
 import '../model/conversation.dart';
 
 abstract class Writer {
-  Stream<Conversation> write(
-      Stream<Conversation> conversation, Uri destination);
+  final Map<String, dynamic> config;
+
+  const Writer(this.config);
+
+  Stream<Conversation> write(Stream<Conversation> conversation,
+      Uri destination);
 }
