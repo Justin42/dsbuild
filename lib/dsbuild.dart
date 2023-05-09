@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
+
 import 'api.dart';
 import 'config.dart';
 import 'model/descriptor.dart';
@@ -11,6 +13,8 @@ import 'transformer/transformers.dart';
 import 'writer/vicuna_writer.dart';
 
 class DsBuild extends DsBuildApi {
+  static Logger log = Logger("dsbuild");
+
   static const Map<String, Type> builtinPreprocessors = {
     'ExactMatch': ExactMatch,
     'Punctuation': Punctuation,
@@ -34,29 +38,64 @@ class DsBuild extends DsBuildApi {
             Registry(readers, writers, preprocessors: preprocessors));
 
   @override
+  List<String> verifyDescriptor() {
+    List<String> errors = [];
+
+    // Verify preprocessors
+    for (StepDescriptor step in repository.descriptor.preprocessorSteps) {
+      if (!registry.preprocessors.containsKey(step.type)) {
+        errors.add("No preprocessor matching type '${step.type}'");
+      }
+    }
+
+    // Verify readers
+    for (InputDescriptor input in repository.descriptor.inputs) {
+      if (!registry.readers.containsKey(input.format)) {
+        errors.add("No reader matching type '${input.format}'");
+      }
+    }
+
+    // Verify postprocessors
+    for (OutputDescriptor output in repository.descriptor.outputs) {
+      for (StepDescriptor step in output.steps) {
+        if (!registry.postprocessors.containsKey(step.type)) {
+          errors.add("No postprocessor matching type '${output.format}");
+        }
+      }
+    }
+
+    // Verify writers
+    for (OutputDescriptor output in repository.descriptor.outputs) {
+      if (!registry.writers.containsKey(output.format)) {
+        errors.add("No writer matching type '${output.format}'");
+      }
+    }
+
+    return errors;
+  }
+
+  @override
   Stream<InputDescriptor> fetchRequirements() async* {
     HttpClient client = HttpClient();
-
     for (int i = 0; i < repository.descriptor.inputs.length; i++) {
       InputDescriptor input = repository.descriptor.inputs[i];
-      if (input.uri.scheme != 'file') {
-        log.fine("Skipping fetch for non-file destination URI '${input.uri}'");
-      } else if (await File(input.uri.toFilePath()).exists()) {
-        log.fine("Skipping fetch for existing input file '${input.uri}'");
+      if (await File(input.path).exists()) {
+        log.fine("Skipping fetch for existing input file '${input.path}'");
       } else {
-        Uri targetUri = input.uri;
         Uri? sourceUri = Uri.tryParse(input.source);
         if (sourceUri == null) {
           log.severe("Unable to parse URI for input '${input.source}'");
           continue;
         }
+        log.info("Retrieving ${input.source}");
         final request = await client.getUrl(sourceUri);
         final response = await request.close();
-        response.pipe(File.fromUri(targetUri).openWrite());
+
+        File file = await File(input.path).create(recursive: true);
+        response.pipe(file.openWrite());
         yield input;
       }
     }
-
     client.close();
   }
 }
