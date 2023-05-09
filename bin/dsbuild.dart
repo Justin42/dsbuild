@@ -3,20 +3,21 @@
 
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dsbuild/api.dart';
 import 'package:dsbuild/dsbuild.dart';
+import 'package:dsbuild/error.dart';
 import 'package:dsbuild/model/descriptor.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 
-final Logger log = Logger("dsbuild");
-
 void main(List<String> args) async {
+  final Logger log = Logger("dsbuild");
+
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     print(
-        '${record.time}/${record.level.name}/${record.loggerName}: ${record
-            .message}');
+        '${record.time}/${record.level.name}/${record.loggerName}: ${record.message}');
   });
 
   String descriptorPath = args.isEmpty ? 'dataset.yaml' : args[0];
@@ -35,17 +36,50 @@ void main(List<String> args) async {
   // Initialize DsBuild
   DsBuildApi dsBuild = DsBuild(descriptor);
 
-  log.config("Validating descriptor.");
+  log.info("Validating descriptor.");
   List<String> errors = dsBuild.verifyDescriptor();
   if (errors.isNotEmpty) {
     for (String validationError in dsBuild.verifyDescriptor()) {
       log.severe(validationError);
+      exit(1);
     }
   } else {
     log.config("Descriptor valid.");
   }
 
-  await dsBuild.fetchRequirements().forEach((element) {
-    log.info("Retrieved ${element.source}");
-  });
+  // Retrieve and verify input
+  {
+    List<FileVerificationError> hashErrors = [];
+    List<InputDescriptor> hashUpdates = [];
+    await dsBuild.fetchRequirements().forEach((input) async {
+      if (input.hash != null) {
+        log.info("Verifying hash for ${input.path}");
+        Digest hash = await sha512.bind(File(input.path).openRead()).last;
+        if (hash.toString() != input.hash!) {
+          FileVerificationError error = FileVerificationError(
+              input.path, input.source, input.hash!, hash.toString());
+          log.severe(error);
+          hashErrors.add(error);
+        } else {
+          log.config("Verified hash for ${input.path}");
+        }
+      } else if (dsBuild.repository.descriptor.generateHashes) {
+        log.info("Generating hash for ${input.path}");
+        Digest hash = await sha512.bind(File(input.path).openRead()).last;
+        log.info(
+            "Generated SHA512 hash.\nFile: ${input.path}\nSource: ${input.source}\nsha512: ${hash.toString()}");
+        hashUpdates.add(input.copyWith(hash: hash.toString()));
+      }
+    });
+
+    // Update descriptors with any newly generated hashes.
+    for (InputDescriptor input in hashUpdates) {
+      dsBuild.repository.updateInputHash(input.source, input.hash!);
+    }
+    if (hashErrors.isNotEmpty) {
+      exit(1);
+    }
+  }
+
+  log.info("Loading input data.");
 }

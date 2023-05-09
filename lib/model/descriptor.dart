@@ -4,6 +4,8 @@ class DatasetDescriptor {
   final String name;
   final String description;
   final bool generateReadme;
+  final bool generateHashes;
+  final bool verifyHashes;
   final List<InputDescriptor> inputs;
   final List<OutputDescriptor> outputs;
 
@@ -20,6 +22,8 @@ class DatasetDescriptor {
       {this.name = 'default',
       this.description = 'No description',
       this.generateReadme = true,
+      this.generateHashes = true,
+      this.verifyHashes = true,
       this.inputs = const [],
       this.outputs = const []});
 
@@ -27,6 +31,8 @@ class DatasetDescriptor {
       : name = data['name'],
         description = data['description'],
         generateReadme = data['build']['generateReadme'],
+        generateHashes = data['build']['generateHashes'],
+        verifyHashes = data['build']['verifyHashes'],
         inputs = [
           for (var input in data['input']) InputDescriptor.fromYaml(input)
         ],
@@ -38,23 +44,38 @@ class DatasetDescriptor {
 class InputDescriptor {
   final String path;
   final String description;
-  final String source;
+  final Uri source;
+  final String? hash;
   final String format;
   final List<StepDescriptor> steps;
 
   const InputDescriptor(
-      this.path, this.description, this.source, this.format, this.steps);
+      this.path, this.description, this.source, this.format, this.steps,
+      {this.hash});
 
   InputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
         description = data['description'],
         source = data['source'],
+        hash = data['sha512'],
         format = data['format'],
         steps = [
           if (data['steps'] != null)
             for (var step in data['steps'])
               if (step != null) StepDescriptor.fromYaml(step)
         ];
+
+  InputDescriptor copyWith(
+      {String? path,
+      String? description,
+      Uri? source,
+      String? hash,
+      String? format,
+      List<StepDescriptor>? steps}) {
+    return InputDescriptor(path ?? this.path, description ?? this.description,
+        source ?? this.source, format ?? this.format, steps ?? this.steps,
+        hash: hash ?? this.hash);
+  }
 }
 
 class OutputDescriptor {
@@ -67,7 +88,7 @@ class OutputDescriptor {
 
   OutputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
-        description = data['description'],
+        description = data['description'] ?? 'Output Data',
         format = data['format'],
         steps = [
           if (data['steps'] != null)

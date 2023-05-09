@@ -8,6 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  crypto: ^3.0.3
   http: ^0.13.6
   logging: ^1.1.1
   yaml: ^3.1.2

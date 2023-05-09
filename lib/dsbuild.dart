@@ -82,17 +82,21 @@ class DsBuild extends DsBuildApi {
       if (await File(input.path).exists()) {
         log.fine("Skipping fetch for existing input file '${input.path}'");
       } else {
-        Uri? sourceUri = Uri.tryParse(input.source);
-        if (sourceUri == null) {
-          log.severe("Unable to parse URI for input '${input.source}'");
+        if (!['http', 'https'].contains(input.source.scheme)) {
+          log.severe("Unhandled URI input: '${input.source}'");
           continue;
         }
         log.info("Retrieving ${input.source}");
-        final request = await client.getUrl(sourceUri);
+        final request = await client.getUrl(input.source);
         final response = await request.close();
-
-        File file = await File(input.path).create(recursive: true);
-        response.pipe(file.openWrite());
+        if (response.statusCode != HttpStatus.ok) {
+          log.warning(
+              "Failed to retrieve input data. Received http status ${response.statusCode}");
+          await response.drain();
+        } else {
+          File file = await File(input.path).create(recursive: true);
+          await response.pipe(file.openWrite());
+        }
         yield input;
       }
     }
