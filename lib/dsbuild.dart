@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dsbuild/model/conversation.dart';
 import 'package:logging/logging.dart';
 
 import 'api.dart';
@@ -101,5 +102,31 @@ class DsBuild extends DsBuildApi {
       }
     }
     client.close();
+  }
+
+  @override
+  Stream<Conversation> postProcess(
+      Stream<Conversation> conversations, OutputDescriptor output) {
+    // TODO: implement postProcess
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Stream<Conversation>> transform(InputDescriptor input) {
+    // TODO: implement transform
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<OutputDescriptor> write(
+      List<Conversation> conversations, OutputDescriptor output) {
+    // TODO: implement write
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<OutputDescriptor> writeAll(List<Conversation> conversations) {
+    // TODO: implement writeAll
+    throw UnimplementedError();
   }
 }
