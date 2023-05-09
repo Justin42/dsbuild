@@ -30,11 +30,9 @@ class DatasetDescriptor {
         inputs = [
           for (var input in data['inputs']) InputDescriptor.fromYaml(input)
         ],
-        outputs = [] {
-    for (var input in data['inputs']) {
-      inputs.add(InputDescriptor.fromYaml(input));
-    }
-  }
+        outputs = [
+          for (var output in data['outputs']) OutputDescriptor.fromYaml(output)
+        ];
 }
 
 class InputDescriptor {
@@ -60,12 +58,22 @@ class InputDescriptor {
 }
 
 class OutputDescriptor {
-  final Uri uri;
+  final String path;
   final String description;
   final String format;
   final List<StepDescriptor> steps;
 
-  OutputDescriptor(this.uri, this.description, this.format, this.steps);
+  OutputDescriptor(this.path, this.description, this.format, this.steps);
+
+  OutputDescriptor.fromYaml(YamlMap data)
+      : path = data['path'],
+        description = data['description'],
+        format = data['format'],
+        steps = [
+          if (data['steps'] != null)
+            for (var step in data['steps'])
+              if (step != null) StepDescriptor.fromYaml(step)
+        ];
 }
 
 class StepDescriptor {
