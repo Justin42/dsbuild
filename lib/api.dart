@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:dsbuild/model/conversation.dart';
-import 'package:dsbuild/model/descriptor.dart';
-
 import 'config.dart';
+import 'model/conversation.dart';
+import 'model/descriptor.dart';
 import 'registry.dart';
 import 'repository.dart';
 

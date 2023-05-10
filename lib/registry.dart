@@ -1,8 +1,7 @@
-import 'package:dsbuild/src/postprocessor.dart';
-
-import 'preprocessor.dart';
-import 'reader.dart';
-import 'writer.dart';
+import 'reader/reader.dart';
+import 'transformer/postprocessor.dart';
+import 'transformer/preprocessor.dart';
+import 'writer/writer.dart';
 
 class Registry {
   final Map<String, Reader Function(Map<String, dynamic>)> readers;

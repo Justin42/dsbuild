@@ -1,10 +1,6 @@
 import 'dart:async';
 
-import 'package:logging/logging.dart';
-
-import '../../model/conversation.dart';
-
-final Logger log = Logger("dsbuild");
+import '../model/conversation.dart';
 
 abstract class Preprocessor {
   String get description;

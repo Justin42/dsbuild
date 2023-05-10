@@ -13,7 +13,7 @@ import 'reader/vicuna_reader.dart';
 import 'registry.dart';
 import 'repository.dart';
 import 'transformer/preprocessor.dart';
-import 'transformer/transformers.dart';
+import 'transformer/transformers.dart' as t;
 import 'writer/vicuna_writer.dart';
 import 'writer/writer.dart';
 
@@ -22,10 +22,10 @@ class DsBuild extends DsBuildApi {
 
   static final Map<String, Preprocessor Function(Map<String, dynamic>)>
       builtinPreprocessors = {
-    'ExactMatch': (config) => ExactMatch(config),
-    'Punctuation': (config) => Punctuation(config),
-    'Trim': (config) => Trim(config),
-    'Unicode': (config) => Unicode(config)
+    'ExactMatch': (config) => t.ExactMatch(config),
+    'Punctuation': (config) => t.Punctuation(config),
+    'Trim': (config) => t.Trim(config),
+    'Unicode': (config) => t.Unicode(config)
   };
 
   static final Map<String, Postprocessor Function(Map<String, dynamic>)>
