@@ -1,7 +1,7 @@
 class Conversation {
-  final List<Message> messages = const [];
+  final List<Message> messages;
 
-  const Conversation();
+  const Conversation({this.messages = const []});
 }
 
 class Message {
