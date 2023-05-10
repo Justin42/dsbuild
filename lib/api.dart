@@ -28,9 +28,14 @@ abstract class DsBuildApi {
 
   Stream<Conversation> postProcess(
       Stream<Conversation> conversations, OutputDescriptor output);
+  Stream<Conversation> write(
+          Stream<Conversation> conversations, OutputDescriptor output) =>
+      registry.writers[output.format]!
+          .call({}).write(conversations, output.path);
 
-  Future<OutputDescriptor> write(
-      List<Conversation> conversations, OutputDescriptor output);
+  Future<Stream<MessageEnvelope>> read(InputDescriptor inputDescriptor) =>
+      registry.readers[inputDescriptor.format]!
+          .call({}).read(inputDescriptor.path);
 
   Stream<OutputDescriptor> writeAll(List<Conversation> conversations) async* {
     for (OutputDescriptor output in repository.descriptor.outputs) {

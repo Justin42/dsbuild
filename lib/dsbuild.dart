@@ -128,26 +128,9 @@ class DsBuild extends DsBuildApi {
   }
 
   @override
-  Future<Stream<Conversation>> transform(InputDescriptor input) {
+  Future<Stream<MessageEnvelope>> transform(
+      Stream<MessageEnvelope> messages, List<StepDescriptor> steps) {
     // TODO: implement transform
     throw UnimplementedError();
-  }
-
-  @override
-  Future<OutputDescriptor> write(
-      List<Conversation> conversations, OutputDescriptor output) async {
-    // Currently there is no config provided to writers.
-    // This could be added in the OutputDescriptor and used here.
-    Writer writer = registry.writers[output.format]!.call({});
-
-    // Creates a stream of conversations and passes it through the postProcessor specified by the output descriptor.
-    // The transformed stream is then passed through the writer unaltered.
-    // There are no additional steps in the pipeline so the data is discarded.
-    // The input is considered immutable during postprocessing.
-    Stream<Conversation> processed =
-        postProcess(Stream.fromIterable(conversations), output);
-    await writer.write(processed, File(output.path).uri).drain();
-
-    return output;
   }
 }
