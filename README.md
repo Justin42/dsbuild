@@ -8,7 +8,7 @@ train high-quality LM models.
 Key Features:
 
 - YAML configuration for easy review, replication, and iteration.
-- Common text processors for pruning or stripping messages.
+- Common text transformers for pruning or stripping messages.
 
 Current Limitations:
 
@@ -21,7 +21,7 @@ Current Limitations:
 
 The processing pipeline is as follows:
 
-**Reader -> Preprocessor -> Sequential Merge -> Postprocessor -> Writer**
+**Reader -> Preprocessor -> Concatenate -> Postprocessor -> Writer**
 
 The responsibilities for each component of the pipeline are as follows:
 
@@ -36,8 +36,8 @@ The responsibilities for each component of the pipeline are as follows:
   preprocessor, and runs in parallel for each input.
 
 
-- **Sequential Merge**: Data output from preprocessors are collected and sequentially merged in the order of their
-  input. This step operates on a MessageEnvelope stream and outputs a Conversation stream.
+- **Concatenate**: Data output from preprocessors are collected in the order of their input. This step operates on a
+  MessageEnvelope stream and outputs a Conversation stream. During this step, all conversations are fully stored in RAM.
 
 
 - **Postprocessors**: Performs transformations on the final Conversation stream. This happens sequentially after the
