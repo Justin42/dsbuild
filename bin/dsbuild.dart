@@ -87,33 +87,40 @@ void main(List<String> args) async {
     }
   }
 
-  log.info("Performing transformations...");
-  final DateTime startTime = DateTime.timestamp();
-  Map<String, dynamic> stats = {'Total Conversations': 0, 'Elapsed': Duration};
+  // Stats and progress tracking
+  Map<String, dynamic> stats = {
+    'Total Conversations': 0,
+    'Start Time': DateTime.timestamp(),
+    'Elapsed': Duration
+  };
 
   StreamSubscription<void> progressTask =
       Stream.periodic(Duration(seconds: 1), (count) {
-    stats['Elapsed'] = DateTime.timestamp().difference(startTime);
+    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
     if (count % 10 == 0) {
       log.info(jsonEncode(stats));
     }
   }).listen((event) {}, onDone: () {
-    stats['Elapsed'] = DateTime.timestamp().difference(startTime);
+    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
     log.info(jsonEncode(stats));
   });
 
-  // All inputs transformed and concatenated into a single list.
-  // Some stats and progress are tracked.
-  // await dsBuild.transformAll().toList();
-  List<Conversation> conversations =
-      await dsBuild.transformAll().then((stream) => stream
-          .map((event) {
+  StreamTransformer<Conversation, Conversation> statTracker =
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) {
             stats['Total Conversations'] += 1;
-            return event;
-          })
-          .toList()
-          .whenComplete(() => progressTask.cancel()));
+            sink.add(data);
+          },
+          handleDone: (sink) => progressTask.cancel());
 
-  log.info("Writing outputs.");
-  dsBuild.writeAll(Stream.fromIterable(conversations));
+  log.info("Preparing pipeline...");
+  Stream<Conversation> conversations =
+      dsBuild.transformAll().transform(statTracker);
+
+  log.info("Performing transformations...");
+  await dsBuild
+      .writeAll(conversations)
+      .forEach((OutputDescriptor outputDescriptor) {
+    log.info("Generated output ${outputDescriptor.path}");
+  });
 }
