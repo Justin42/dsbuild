@@ -12,11 +12,11 @@ class BluemoonReader extends Reader {
   const BluemoonReader(super.config);
 
   @override
-  Future<Stream<MessageEnvelope>> read(String source) async {
+  Stream<MessageEnvelope> read(String source) async* {
     List<Map<String, dynamic>> json =
         jsonDecode(await File(source).readAsString());
 
-    return Stream.fromIterable(json).map((event) => MessageEnvelope(
+    yield* Stream.fromIterable(json).map((event) => MessageEnvelope(
         Message(event['message_username'], event['message']),
         ['thread_href'].hashCode));
   }

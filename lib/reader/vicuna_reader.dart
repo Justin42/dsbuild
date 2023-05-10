@@ -9,10 +9,10 @@ class VicunaReader extends Reader {
   const VicunaReader(super.config);
 
   @override
-  Future<Stream<MessageEnvelope>> read(String source) async {
+  Stream<MessageEnvelope> read(String source) async* {
     List<dynamic> json = jsonDecode(await File(source).readAsString());
 
-    return Stream.fromIterable(json).transform(
+    yield* Stream.fromIterable(json).transform(
         StreamTransformer.fromHandlers(handleData: (conversation, messageSink) {
       for (Map<String, String> message in conversation['conversations']) {
         messageSink.add(MessageEnvelope(

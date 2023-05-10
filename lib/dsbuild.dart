@@ -128,7 +128,7 @@ class DsBuild extends DsBuildApi {
   }
 
   @override
-  Future<Stream<MessageEnvelope>> transform(
+  Stream<MessageEnvelope> transform(
       Stream<MessageEnvelope> messages, List<StepDescriptor> steps) {
     // TODO: implement transform
     throw UnimplementedError();

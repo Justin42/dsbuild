@@ -18,27 +18,30 @@ abstract class DsBuildApi {
 
   Stream<InputDescriptor> fetchRequirements();
 
-  Future<Stream<MessageEnvelope>> transform(
+  Stream<MessageEnvelope> transform(
       Stream<MessageEnvelope> messages, List<StepDescriptor> steps);
 
   Stream<Conversation> postProcess(
       Stream<Conversation> conversations, OutputDescriptor output);
 
   Stream<Conversation> concatenateMessages(
-      List<Future<Stream<MessageEnvelope>>> data) async* {
-    for (Future<Stream<MessageEnvelope>> pipeline in data) {
+      List<Stream<MessageEnvelope>> data) async* {
+    for (Stream<MessageEnvelope> pipeline in data) {
       final List<Message> convoMessages = [];
-      StreamIterator<MessageEnvelope> messages = StreamIterator(await pipeline);
+      StreamIterator<MessageEnvelope> messages = StreamIterator(pipeline);
       await messages.moveNext();
       convoMessages.add(Message(messages.current.from, messages.current.value));
       int convoId = messages.current.conversation;
 
       while (await messages.moveNext()) {
+        // Start new convo
         if (messages.current.conversation != convoId) {
           yield Conversation(messages: convoMessages);
           convoId = messages.current.conversation;
           convoMessages.clear();
-        } else {
+        }
+        // Add message to convo
+        else {
           convoMessages
               .add(Message(messages.current.from, messages.current.value));
         }
@@ -46,14 +49,14 @@ abstract class DsBuildApi {
     }
   }
 
-  Future<Stream<Conversation>> transformAll() async {
-    List<Future<Stream<MessageEnvelope>>> pending = [];
+  Stream<Conversation> transformAll() async* {
+    List<Stream<MessageEnvelope>> pending = [];
     for (InputDescriptor inputDescriptor in repository.descriptor.inputs) {
-      Future<Stream<MessageEnvelope>> pipeline =
-          transform(await read(inputDescriptor), inputDescriptor.steps);
+      Stream<MessageEnvelope> pipeline =
+          transform(read(inputDescriptor), inputDescriptor.steps);
       pending.add(pipeline);
     }
-    return concatenateMessages(pending);
+    yield* concatenateMessages(pending);
   }
 
   Stream<Conversation> write(
@@ -61,7 +64,7 @@ abstract class DsBuildApi {
       registry.writers[output.format]!
           .call({}).write(conversations, output.path);
 
-  Future<Stream<MessageEnvelope>> read(InputDescriptor inputDescriptor) =>
+  Stream<MessageEnvelope> read(InputDescriptor inputDescriptor) =>
       registry.readers[inputDescriptor.format]!
           .call({}).read(inputDescriptor.path);
 

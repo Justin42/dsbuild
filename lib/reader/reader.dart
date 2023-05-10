@@ -5,5 +5,5 @@ abstract class Reader {
 
   const Reader(this.config);
 
-  Future<Stream<MessageEnvelope>> read(String source);
+  Stream<MessageEnvelope> read(String source);
 }
