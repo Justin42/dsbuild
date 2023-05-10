@@ -39,6 +39,9 @@ void main(List<String> args) async {
   // Initialize DsBuild
   DsBuildApi dsBuild = DsBuild(descriptor);
 
+  // Additional transformers can be registered.
+  //dsBuild.registry.registerPreprocessor(name, (config) => Preprocessor())
+
   log.info("Validating descriptor.");
   List<String> errors = dsBuild.verifyDescriptor();
   if (errors.isNotEmpty) {
@@ -99,6 +102,9 @@ void main(List<String> args) async {
     log.info(jsonEncode(stats));
   });
 
+  // All inputs transformed and concatenated into a single list.
+  // Some stats and progress are tracked.
+  // await dsBuild.transformAll().toList();
   List<Conversation> conversations = await dsBuild
       .transformAll()
       .map((event) {
