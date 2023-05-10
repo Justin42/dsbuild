@@ -6,8 +6,8 @@ class VicunaWriter extends Writer {
   const VicunaWriter(super.config);
 
   @override
-  Stream<Conversation> write(Stream<Conversation> conversation,
-      Uri destination) {
-    return conversation;
+  Stream<Conversation> write(
+      Stream<Conversation> conversations, String destination) {
+    throw UnimplementedError();
   }
 }

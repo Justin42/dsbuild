@@ -5,6 +5,6 @@ abstract class Writer {
 
   const Writer(this.config);
 
-  Stream<Conversation> write(Stream<Conversation> conversation,
-      Uri destination);
+  Stream<Conversation> write(
+      Stream<Conversation> conversations, String destination);
 }
