@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../model/conversation.dart';
+import 'model/conversation.dart';
 import 'preprocessor.dart';
 
 class ExactMatch extends Preprocessor {
