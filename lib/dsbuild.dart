@@ -1,11 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:dsbuild/model/conversation.dart';
 import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:logging/logging.dart';
 
-import 'api.dart';
 import 'config.dart';
+import 'model/conversation.dart';
 import 'model/descriptor.dart';
 import 'reader/bluemoon_reader.dart';
 import 'reader/reader.dart';
@@ -17,7 +17,11 @@ import 'transformer/transformers.dart' as t;
 import 'writer/vicuna_writer.dart';
 import 'writer/writer.dart';
 
-class DsBuild extends DsBuildApi {
+class DsBuild {
+  final Config config;
+  final Repository repository;
+  final Registry registry;
+
   static Logger log = Logger("dsbuild");
 
   static final Map<String, Preprocessor Function(Map<String, dynamic>)>
@@ -45,16 +49,14 @@ class DsBuild extends DsBuildApi {
   };
 
   DsBuild(DatasetDescriptor descriptor,
-      {Registry? registry, Config config = const Config()})
-      : super(
-            config,
-            Repository(descriptor),
-            registry ??
-                Registry(builtinReaders, builtinWriters,
-                    preprocessors: builtinPreprocessors,
-                    postprocessors: builtinPostprocessors));
+      {Registry? registry, this.config = const Config()})
+      : repository = Repository(descriptor),
+        registry = registry ??
+            Registry(builtinReaders, builtinWriters,
+                preprocessors: builtinPreprocessors,
+                postprocessors: builtinPostprocessors);
 
-  @override
+  /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
     List<String> errors = [];
 
@@ -91,7 +93,8 @@ class DsBuild extends DsBuildApi {
     return errors;
   }
 
-  @override
+  /// Fetch all requirements.
+  /// yields an InputDescriptor for each newly satisfied dependency.
   Stream<InputDescriptor> fetchRequirements() async* {
     HttpClient client = HttpClient();
     for (int i = 0; i < repository.descriptor.inputs.length; i++) {
@@ -120,17 +123,86 @@ class DsBuild extends DsBuildApi {
     client.close();
   }
 
-  @override
-  Stream<Conversation> postProcess(
-      Stream<Conversation> conversations, OutputDescriptor output) {
-    // TODO: implement postProcess
-    throw UnimplementedError();
-  }
-
-  @override
+  /// Perform the specified transformation steps.
   Stream<MessageEnvelope> transform(
       Stream<MessageEnvelope> messages, List<StepDescriptor> steps) {
-    // TODO: implement transform
-    throw UnimplementedError();
+    Stream<MessageEnvelope> pipeline = messages;
+    for (StepDescriptor step in steps) {
+      pipeline = pipeline.transform(
+          registry.preprocessors[step.type]!.call(step.config).transformer);
+    }
+    return pipeline;
+  }
+
+  /// Perform the postprocessing steps defined in the OutputDescriptor
+  Stream<Conversation> postProcess(
+      Stream<Conversation> conversations, OutputDescriptor output) {
+    Stream<Conversation> pipeline = conversations;
+    for (StepDescriptor step in output.steps) {
+      pipeline = pipeline
+          .transform(registry.postprocessors[step.type]!.call({}).transformer);
+    }
+    return pipeline;
+  }
+
+  /// Utility function to concatenate multiple MessageEnvelope streams.
+  // This should probably be replaced by a StreamGroup or something.
+  Stream<Conversation> concatenateMessages(
+      List<Stream<MessageEnvelope>> data) async* {
+    for (Stream<MessageEnvelope> pipeline in data) {
+      final List<Message> convoMessages = [];
+      StreamIterator<MessageEnvelope> messages = StreamIterator(pipeline);
+      await messages.moveNext();
+      convoMessages.add(Message(messages.current.from, messages.current.value));
+      int convoId = messages.current.conversation;
+
+      while (await messages.moveNext()) {
+        // Start new convo
+        if (messages.current.conversation != convoId) {
+          yield Conversation(messages: convoMessages);
+          convoId = messages.current.conversation;
+          convoMessages.clear();
+        }
+        // Add message to convo
+        else {
+          convoMessages
+              .add(Message(messages.current.from, messages.current.value));
+        }
+      }
+    }
+  }
+
+  /// Transform each input according to it's InputDescriptor.
+  /// The transformation output is concatenated, in the order of input, into a single Conversation stream.
+  Stream<Conversation> transformAll() async* {
+    List<Stream<MessageEnvelope>> pending = [];
+    for (InputDescriptor inputDescriptor in repository.descriptor.inputs) {
+      Stream<MessageEnvelope> pipeline =
+          transform(read(inputDescriptor), inputDescriptor.steps);
+      pending.add(pipeline);
+    }
+    yield* concatenateMessages(pending);
+  }
+
+  /// Write the output conversation stream to the specified output.
+  /// Stream elements are unaltered.
+  Stream<Conversation> write(
+          Stream<Conversation> conversations, OutputDescriptor output) =>
+      registry.writers[output.format]!
+          .call({}).write(conversations, output.path);
+
+  /// Read the input specified by the InputDescriptor.
+  /// yields MessageEnvelope for each message.
+  Stream<MessageEnvelope> read(InputDescriptor inputDescriptor) =>
+      registry.readers[inputDescriptor.format]!
+          .call({}).read(inputDescriptor.path);
+
+  /// Write the conversation stream to all outputs.
+  /// yields OutputDescriptor for each output.
+  Stream<OutputDescriptor> writeAll(Stream<Conversation> conversations) async* {
+    for (OutputDescriptor descriptor in repository.descriptor.outputs) {
+      await write(conversations, descriptor).drain();
+      yield descriptor;
+    }
   }
 }

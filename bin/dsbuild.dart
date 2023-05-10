@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:dsbuild/api.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/error.dart';
 import 'package:dsbuild/model/conversation.dart';
@@ -37,7 +36,7 @@ void main(List<String> args) async {
   }
 
   // Initialize DsBuild
-  DsBuildApi dsBuild = DsBuild(descriptor);
+  DsBuild dsBuild = DsBuild(descriptor);
 
   // Additional transformers can be registered.
   //dsBuild.registry.registerPreprocessor(name, (config) => Preprocessor())
