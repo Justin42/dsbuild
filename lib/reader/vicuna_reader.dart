@@ -5,8 +5,8 @@ import 'dart:io';
 import '../model/conversation.dart';
 import 'reader.dart';
 
-class VicunaReader extends Reader {
-  const VicunaReader(super.config);
+class FastChatReader extends Reader {
+  const FastChatReader(super.config);
 
   @override
   Stream<MessageEnvelope> read(String source) async* {

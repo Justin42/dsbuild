@@ -36,12 +36,12 @@ class DsBuild extends DsBuildApi {
   static final Map<String, Reader Function(Map<String, dynamic>)>
       builtinReaders = {
     'bluemoon': (config) => BluemoonReader(config),
-    'vicuna': (config) => VicunaReader(config),
+    'fastchat': (config) => FastChatReader(config),
   };
 
   static final Map<String, Writer Function(Map<String, dynamic>)>
       builtinWriters = {
-    'vicuna': (config) => VicunaWriter(config),
+    'fastchat': (config) => FastChatWriter(config),
   };
 
   DsBuild(DatasetDescriptor descriptor,

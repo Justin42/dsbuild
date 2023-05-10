@@ -2,8 +2,8 @@ import 'package:dsbuild/model/conversation.dart';
 
 import 'writer.dart';
 
-class VicunaWriter extends Writer {
-  const VicunaWriter(super.config);
+class FastChatWriter extends Writer {
+  const FastChatWriter(super.config);
 
   @override
   Stream<Conversation> write(
