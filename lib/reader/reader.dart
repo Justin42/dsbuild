@@ -5,5 +5,5 @@ abstract class Reader {
 
   const Reader(this.config);
 
-  Stream<MessageEnvelope> process(Stream<Map<String, dynamic>> jsonStream);
+  Future<Stream<MessageEnvelope>> read(String source);
 }
