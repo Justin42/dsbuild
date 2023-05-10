@@ -105,17 +105,15 @@ void main(List<String> args) async {
   // All inputs transformed and concatenated into a single list.
   // Some stats and progress are tracked.
   // await dsBuild.transformAll().toList();
-  List<Conversation> conversations = await dsBuild
-      .transformAll()
-      .map((event) {
-        stats['Total Conversations'] += 1;
-        return event;
-      })
-      .toList()
-      .whenComplete(() {
-        progressTask.cancel();
-      });
+  List<Conversation> conversations =
+      await dsBuild.transformAll().then((stream) => stream
+          .map((event) {
+            stats['Total Conversations'] += 1;
+            return event;
+          })
+          .toList()
+          .whenComplete(() => progressTask.cancel()));
 
   log.info("Writing outputs.");
-  dsBuild.writeAll(conversations);
+  dsBuild.writeAll(Stream.fromIterable(conversations));
 }
