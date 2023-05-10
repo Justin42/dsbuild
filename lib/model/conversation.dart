@@ -22,6 +22,10 @@ class MessageEnvelope {
   String get value => _message.value;
 
   const MessageEnvelope(this._message, this.conversation);
+
+  MessageEnvelope.empty()
+      : _message = Message('', ''),
+        conversation = 0;
 }
 
 enum Sender { user, other }
