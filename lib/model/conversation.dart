@@ -5,7 +5,7 @@ class Conversation {
 
   Map<String, dynamic> toJson() {
     return {
-      'conversations': [for(Message message in messages) message.toJson()]
+      'conversations': [for (Message message in messages) message.toJson()]
     };
   }
 }
@@ -23,7 +23,7 @@ class Message {
 
 class MessageEnvelope {
   final Message _message;
-  final int conversation;
+  final int conversationId;
 
   bool get isEmpty => _message.value.isEmpty;
 
@@ -31,11 +31,11 @@ class MessageEnvelope {
 
   String get value => _message.value;
 
-  const MessageEnvelope(this._message, this.conversation);
+  const MessageEnvelope(this._message, this.conversationId);
 
   MessageEnvelope.empty()
       : _message = Message('', ''),
-        conversation = 0;
+        conversationId = 0;
 }
 
 enum Sender { user, other }
