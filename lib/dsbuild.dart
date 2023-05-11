@@ -71,8 +71,8 @@ class DsBuild {
 
     // Verify readers
     for (InputDescriptor input in repository.descriptor.inputs) {
-      if (!registry.readers.containsKey(input.format)) {
-        errors.add("No reader matching type '${input.format}'");
+      if (!registry.readers.containsKey(input.reader.type)) {
+        errors.add("No reader matching type '${input.reader.type}'");
       }
     }
 
@@ -194,7 +194,7 @@ class DsBuild {
   /// Read the input specified by the InputDescriptor.
   /// yields MessageEnvelope for each message.
   Stream<MessageEnvelope> read(InputDescriptor inputDescriptor) =>
-      registry.readers[inputDescriptor.format]!
+      registry.readers[inputDescriptor.reader.type]!
           .call({}).read(inputDescriptor.path);
 
   /// Write the conversation stream to all outputs.
