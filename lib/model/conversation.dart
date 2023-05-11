@@ -2,6 +2,12 @@ class Conversation {
   final List<Message> messages;
 
   const Conversation({this.messages = const []});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'conversations': [for(Message message in messages) message.toJson()]
+    };
+  }
 }
 
 class Message {
@@ -9,6 +15,10 @@ class Message {
   final String value;
 
   const Message(this.from, this.value);
+
+  Map<String, dynamic> toJson() {
+    return {'from': from, 'value': value};
+  }
 }
 
 class MessageEnvelope {
