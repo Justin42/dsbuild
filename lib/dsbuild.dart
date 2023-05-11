@@ -8,13 +8,13 @@ import 'config.dart';
 import 'model/conversation.dart';
 import 'model/descriptor.dart';
 import 'reader/bluemoon_reader.dart';
+import 'reader/fastchat_reader.dart';
 import 'reader/reader.dart';
-import 'reader/vicuna_reader.dart';
 import 'registry.dart';
 import 'repository.dart';
 import 'transformer/preprocessor.dart';
 import 'transformer/transformers.dart' as t;
-import 'writer/vicuna_writer.dart';
+import 'writer/fastchat_writer.dart';
 import 'writer/writer.dart';
 
 class DsBuild {
@@ -200,8 +200,10 @@ class DsBuild {
   /// Write the conversation stream to all outputs.
   /// yields OutputDescriptor for each output.
   Stream<OutputDescriptor> writeAll(Stream<Conversation> conversations) async* {
+    final List<Conversation> collected = await conversations.toList();
+
     for (OutputDescriptor descriptor in repository.descriptor.outputs) {
-      await write(conversations, descriptor).drain();
+      await write(Stream.fromIterable(collected), descriptor).drain();
       yield descriptor;
     }
   }
