@@ -93,33 +93,20 @@ void main(List<String> args) async {
     'Elapsed': Duration
   };
 
-  StreamSubscription<void> progressTask =
-      Stream.periodic(Duration(seconds: 1), (count) {
-    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
-    if (count % 10 == 0) {
-      log.info(jsonEncode(stats));
-    }
-  }).listen((event) {}, onDone: () {
-    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
-    log.info(jsonEncode(stats));
-  });
-
   StreamTransformer<Conversation, Conversation> statTracker =
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) {
-            stats['Total Conversations'] += 1;
-            sink.add(data);
-          },
-          handleDone: (sink) => progressTask.cancel());
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+    stats['Total Conversations'] += 1;
+    sink.add(data);
+  }, handleDone: (sink) {
+    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
+    log.info(jsonEncode(stats, toEncodable: (obj) => obj.toString()));
+    sink.close();
+  });
 
   log.info("Preparing pipeline...");
   Stream<Conversation> conversations =
       dsBuild.transformAll().transform(statTracker);
 
   log.info("Performing transformations...");
-  await dsBuild
-      .writeAll(conversations)
-      .forEach((OutputDescriptor outputDescriptor) {
-    log.info("Generated output ${outputDescriptor.path}");
-  });
+  await dsBuild.writeAll(conversations).drain();
 }
