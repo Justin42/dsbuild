@@ -3,4 +3,5 @@
 .dart_tool/
 .idea
 data
-dataset.yaml
+dataset*.yaml
+out/*
