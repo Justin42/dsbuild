@@ -13,7 +13,10 @@ class ExactMatch extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+          handleData: (data, sink) => sink.add(data),
+          handleDone: (sink) {
+            sink.close();
+          });
 }
 
 class PatternMatch extends Preprocessor {
@@ -26,7 +29,10 @@ class PatternMatch extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+          handleData: (data, sink) => sink.add(data),
+          handleDone: (sink) {
+            sink.close();
+          });
 }
 
 class Punctuation extends Preprocessor {
@@ -39,7 +45,10 @@ class Punctuation extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+          handleData: (data, sink) => sink.add(data),
+          handleDone: (sink) {
+            sink.close();
+          });
 }
 
 class Trim extends Preprocessor {
@@ -51,7 +60,10 @@ class Trim extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+          handleData: (data, sink) => sink.add(data),
+          handleDone: (sink) {
+            sink.close();
+          });
 }
 
 class Unicode extends Preprocessor {
@@ -63,5 +75,8 @@ class Unicode extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+          handleData: (data, sink) => sink.add(data),
+          handleDone: (sink) {
+            sink.close();
+          });
 }
