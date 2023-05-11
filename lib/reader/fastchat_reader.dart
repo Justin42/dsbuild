@@ -16,8 +16,7 @@ class FastChatReader extends Reader {
         StreamTransformer.fromHandlers(handleData: (conversation, messageSink) {
       for (Map<String, dynamic> message in conversation['conversations']) {
         messageSink.add(MessageEnvelope(
-            Message(message['from']!, message['value']!),
-            conversation['id'].hashCode));
+            Message(message['from']!, message['value']!), conversation['id']));
       }
     }));
   }
