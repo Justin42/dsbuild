@@ -1,11 +1,14 @@
 class Conversation {
+  final int id;
   final List<Message> messages;
+  final Map<String, dynamic>? meta;
 
-  const Conversation({this.messages = const []});
+  const Conversation(this.id, {this.messages = const [], this.meta});
 
   Map<String, dynamic> toJson() {
     return {
-      'conversations': [for (Message message in messages) message.toJson()]
+      'id': id,
+      'messages': [for (Message message in messages) message.toJson()]
     };
   }
 }
@@ -23,7 +26,7 @@ class Message {
 
 class MessageEnvelope {
   final Message _message;
-  final int conversationId;
+  final String conversationId;
 
   bool get isEmpty => _message.value.isEmpty;
 
@@ -35,7 +38,7 @@ class MessageEnvelope {
 
   MessageEnvelope.empty()
       : _message = Message('', ''),
-        conversationId = 0;
+        conversationId = '';
 }
 
 enum Sender { user, other }

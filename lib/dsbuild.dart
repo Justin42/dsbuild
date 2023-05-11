@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dsbuild/transformer/postprocessor.dart';
+import 'package:dsbuild/writer/dsbuild_writer.dart';
 import 'package:logging/logging.dart';
 
 import 'config.dart';
@@ -46,6 +47,7 @@ class DsBuild {
   static final Map<String, Writer Function(Map<String, dynamic>)>
       builtinWriters = {
     'fastchat': (config) => FastChatWriter(config),
+    'dsbuild': (config) => DsBuildWriter(config)
   };
 
   DsBuild(DatasetDescriptor descriptor,
@@ -149,15 +151,17 @@ class DsBuild {
   Stream<Conversation> concatenateMessages(
       List<Stream<MessageEnvelope>> data) async* {
     for (Stream<MessageEnvelope> messageStream in data) {
-      final List<Message> convoMessages = [];
-      int convoId = 0;
+      List<Message> convoMessages = [];
+      String convoId = '';
       StreamTransformer<MessageEnvelope, Conversation>
           concatenatingTransformer =
           StreamTransformer.fromHandlers(handleData: (data, sink) {
         if (data.conversationId != convoId) {
           if (convoMessages.isNotEmpty) {
-            sink.add(Conversation(convoId, messages: convoMessages));
-            convoMessages.clear();
+            Conversation conversation = Conversation(convoId.hashCode,
+                messages: convoMessages, meta: {'inputId': convoId});
+            sink.add(conversation);
+            convoMessages = [];
           }
           convoId = data.conversationId;
         } else {
