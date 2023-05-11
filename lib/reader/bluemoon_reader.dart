@@ -13,15 +13,11 @@ class BluemoonReader extends Reader {
 
   @override
   Stream<MessageEnvelope> read(String source) async* {
-    List<dynamic> json = jsonDecode(await File(source).readAsString());
-
-    yield* Stream.fromIterable(json).map((data) {
-      if (data == null) {
-        return MessageEnvelope.empty();
-      }
-      return MessageEnvelope(
+    for (Map<String, dynamic> data
+        in jsonDecode(await File(source).readAsString())) {
+      yield MessageEnvelope(
           Message(data['message_username'] ?? '', data['message'] ?? ''),
-          data['thread_href'].hashCode);
-    });
+          data['thread_href']);
+    }
   }
 }
