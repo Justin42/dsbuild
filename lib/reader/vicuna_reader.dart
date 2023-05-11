@@ -14,9 +14,10 @@ class FastChatReader extends Reader {
 
     yield* Stream.fromIterable(json).transform(
         StreamTransformer.fromHandlers(handleData: (conversation, messageSink) {
-      for (Map<String, String> message in conversation['conversations']) {
+      for (Map<String, dynamic> message in conversation['conversations']) {
         messageSink.add(MessageEnvelope(
-            Message(message['from']!, message['value']!), conversation['id']));
+            Message(message['from']!, message['value']!),
+            conversation['id'].hashCode));
       }
     }));
   }
