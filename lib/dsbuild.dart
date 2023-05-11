@@ -154,13 +154,13 @@ class DsBuild {
       StreamIterator<MessageEnvelope> messages = StreamIterator(pipeline);
       await messages.moveNext();
       convoMessages.add(Message(messages.current.from, messages.current.value));
-      int convoId = messages.current.conversation;
+      int convoId = messages.current.conversationId;
 
       while (await messages.moveNext()) {
         // Start new convo
-        if (messages.current.conversation != convoId) {
+        if (messages.current.conversationId != convoId) {
           yield Conversation(messages: convoMessages);
-          convoId = messages.current.conversation;
+          convoId = messages.current.conversationId;
           convoMessages.clear();
         }
         // Add message to convo
