@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../model/conversation.dart';
 import 'preprocessor.dart';
 
@@ -11,7 +12,8 @@ class ExactMatch extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer((stream, cancelOnError) => stream.listen((event) {}));
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) => sink.add(data));
 }
 
 class PatternMatch extends Preprocessor {
@@ -23,7 +25,8 @@ class PatternMatch extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      throw UnimplementedError();
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) => sink.add(data));
 }
 
 class Punctuation extends Preprocessor {
@@ -35,7 +38,8 @@ class Punctuation extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      throw UnimplementedError();
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) => sink.add(data));
 }
 
 class Trim extends Preprocessor {
@@ -46,7 +50,8 @@ class Trim extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      throw UnimplementedError();
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) => sink.add(data));
 }
 
 class Unicode extends Preprocessor {
@@ -57,5 +62,6 @@ class Unicode extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      throw UnimplementedError();
+      StreamTransformer.fromHandlers(
+          handleData: (data, sink) => sink.add(data));
 }
