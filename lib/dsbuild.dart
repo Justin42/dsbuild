@@ -146,29 +146,25 @@ class DsBuild {
   }
 
   /// Utility function to concatenate multiple MessageEnvelope streams.
-  // This should probably be replaced by a StreamGroup or something.
   Stream<Conversation> concatenateMessages(
       List<Stream<MessageEnvelope>> data) async* {
-    for (Stream<MessageEnvelope> pipeline in data) {
+    for (Stream<MessageEnvelope> messageStream in data) {
       final List<Message> convoMessages = [];
-      StreamIterator<MessageEnvelope> messages = StreamIterator(pipeline);
-      await messages.moveNext();
-      convoMessages.add(Message(messages.current.from, messages.current.value));
-      int convoId = messages.current.conversationId;
-
-      while (await messages.moveNext()) {
-        // Start new convo
-        if (messages.current.conversationId != convoId) {
-          yield Conversation(messages: convoMessages);
-          convoId = messages.current.conversationId;
-          convoMessages.clear();
+      int convoId = 0;
+      StreamTransformer<MessageEnvelope, Conversation>
+          concatenatingTransformer =
+          StreamTransformer.fromHandlers(handleData: (data, sink) {
+        if (data.conversationId != convoId) {
+          if (convoMessages.isNotEmpty) {
+            sink.add(Conversation(convoId, messages: convoMessages));
+            convoMessages.clear();
+          }
+          convoId = data.conversationId;
+        } else {
+          convoMessages.add(Message(data.from, data.value));
         }
-        // Add message to convo
-        else {
-          convoMessages
-              .add(Message(messages.current.from, messages.current.value));
-        }
-      }
+      });
+      yield* messageStream.transform(concatenatingTransformer);
     }
   }
 
