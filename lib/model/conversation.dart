@@ -22,23 +22,30 @@ class Message {
   Map<String, dynamic> toJson() {
     return {'from': from, 'value': value};
   }
+
+  Message copyWith({String? from, String? value}) =>
+      Message(from ?? this.from, value ?? this.value);
 }
 
 class MessageEnvelope {
-  final Message _message;
+  final Message message;
   final String conversationId;
 
-  bool get isEmpty => _message.value.isEmpty;
+  bool get isEmpty => message.value.isEmpty;
 
-  String get from => _message.from;
+  String get from => message.from;
 
-  String get value => _message.value;
+  String get value => message.value;
 
-  const MessageEnvelope(this._message, this.conversationId);
+  const MessageEnvelope(this.message, this.conversationId);
 
   MessageEnvelope.empty()
-      : _message = Message('', ''),
+      : message = Message('', ''),
         conversationId = '';
+
+  MessageEnvelope copyWith({Message? message, String? conversationId}) =>
+      MessageEnvelope(
+          message ?? this.message, conversationId ?? this.conversationId);
 }
 
 enum Sender { user, other }
