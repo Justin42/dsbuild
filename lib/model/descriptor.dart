@@ -52,6 +52,17 @@ class ReaderDescriptor {
         config = data['config'];
 }
 
+class WriterDescriptor {
+  final String type;
+  final Map<dynamic, dynamic> config;
+
+  const WriterDescriptor(this.type, this.config);
+
+  WriterDescriptor.fromYaml(YamlMap data)
+      : type = data['type'],
+        config = data['config'];
+}
+
 class InputDescriptor {
   final String path;
   final String description;
@@ -94,15 +105,17 @@ class InputDescriptor {
 class OutputDescriptor {
   final String path;
   final String description;
-  final String format;
+  final WriterDescriptor writer;
   final List<StepDescriptor> steps;
 
-  OutputDescriptor(this.path, this.description, this.format, this.steps);
+  OutputDescriptor(this.path, this.description, this.writer, this.steps);
 
   OutputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
         description = data['description'] ?? 'Output Data',
-        format = data['format'],
+        writer = (data['writer'] is String)
+            ? WriterDescriptor(data['writer'], {})
+            : WriterDescriptor.fromYaml(data['writer']),
         steps = [
           if (data['steps'] != null)
             for (var step in data['steps'])

@@ -88,8 +88,8 @@ class DsBuild {
 
     // Verify writers
     for (OutputDescriptor output in repository.descriptor.outputs) {
-      if (!registry.writers.containsKey(output.format)) {
-        errors.add("No writer matching type '${output.format}'");
+      if (!registry.writers.containsKey(output.writer.type)) {
+        errors.add("No writer matching type '${output.writer.type}'");
       }
     }
 
@@ -194,8 +194,9 @@ class DsBuild {
   /// Stream elements are unaltered.
   Stream<Conversation> write(
           Stream<Conversation> conversations, OutputDescriptor output) =>
-      registry.writers[output.format]!
-          .call({}).write(conversations, output.path);
+      registry.writers[output.writer.type]!
+          .call(output.writer.config)
+          .write(conversations, output.path);
 
   /// Read the input specified by the InputDescriptor.
   /// yields MessageEnvelope for each message.

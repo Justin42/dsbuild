@@ -6,7 +6,7 @@ abstract class Postprocessor {
   String get description;
 
   final String stepDescription;
-  final Map<String, dynamic> config;
+  final Map config;
 
   StreamTransformer<Conversation, Conversation> get transformer;
 

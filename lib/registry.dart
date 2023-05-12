@@ -7,7 +7,7 @@ class Registry {
   final Map<String, Reader Function(Map)> readers;
   final Map<String, Preprocessor Function(Map)> preprocessors;
   final Map<String, Postprocessor Function(Map)> postprocessors;
-  final Map<String, Writer Function(Map<String, dynamic>)> writers;
+  final Map<String, Writer Function(Map)> writers;
 
   const Registry(this.readers, this.writers,
       {this.preprocessors = const {}, this.postprocessors = const {}});
