@@ -12,14 +12,13 @@ class CsvReader extends Reader {
 
   @override
   Stream<MessageEnvelope> read(String source) async* {
-    Stream<String> csvChunks = Utf8Decoder().bind(File(source).openRead());
-
     int convoIdCol = 0;
     int fromCol = 0;
     int messageCol = 0;
     bool header = true;
 
-    yield* csvChunks
+    yield* Utf8Decoder()
+        .bind(File(source).openRead())
         .transform(CsvToListConverter())
         .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
       // Extract column indexes for configured columns
