@@ -1,7 +1,25 @@
 import 'dart:async';
 
+import 'package:html/parser.dart';
+
 import '../model/conversation.dart';
 import 'preprocessor.dart';
+
+class HtmlStrip extends Preprocessor {
+  HtmlStrip(super.config);
+
+  @override
+  String get description =>
+      "Prune or strip messages exactly matching the provided text";
+
+  @override
+  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWith(
+            message: data.message
+                .copyWith(value: parseFragment(data.message.value).text)));
+      });
+}
 
 class ExactMatch extends Preprocessor {
   const ExactMatch(super.config);
@@ -59,11 +77,10 @@ class Trim extends Preprocessor {
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data),
-          handleDone: (sink) {
-            sink.close();
-          });
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWith(
+            message: data.message.copyWith(value: data.message.value.trim())));
+      });
 }
 
 class Unicode extends Preprocessor {
