@@ -56,7 +56,7 @@ class RegexReplace extends Preprocessor {
         for (int i = 0; i < regex.length; i++) {
           newText = newText.replaceAll(regex[i], config['replacements'][i][1]);
         }
-        sink.add(data.copyWith(message: data.message.copyWith(value: newText)));
+        sink.add(data.copyWithValue(newText));
       });
 }
 

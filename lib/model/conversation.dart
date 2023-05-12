@@ -46,6 +46,10 @@ class MessageEnvelope {
   MessageEnvelope copyWith({Message? message, String? conversationId}) =>
       MessageEnvelope(
           message ?? this.message, conversationId ?? this.conversationId);
+
+  /// Convenience function for copying with new message content
+  MessageEnvelope copyWithValue(String value) =>
+      copyWith(message: message.copyWith(value: value));
 }
 
 enum Sender { user, other }
