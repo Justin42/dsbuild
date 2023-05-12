@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/reader/csv_reader.dart';
 import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:dsbuild/writer/dsbuild_writer.dart';
 import 'package:logging/logging.dart';
@@ -8,7 +9,6 @@ import 'package:logging/logging.dart';
 import 'config.dart';
 import 'model/conversation.dart';
 import 'model/descriptor.dart';
-import 'reader/bluemoon_reader.dart';
 import 'reader/fastchat_reader.dart';
 import 'reader/reader.dart';
 import 'registry.dart';
@@ -40,7 +40,7 @@ class DsBuild {
 
   static final Map<String, Reader Function(Map<String, dynamic>)>
       builtinReaders = {
-    'bluemoon': (config) => BluemoonReader(config),
+    'csv': (config) => CsvReader(config),
     'fastchat': (config) => FastChatReader(config),
   };
 
