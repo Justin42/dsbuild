@@ -26,6 +26,7 @@ class DsBuild {
   static Logger log = Logger("dsbuild");
 
   static final Map<String, Preprocessor Function(Map)> builtinPreprocessors = {
+    'HtmlStrip': (config) => t.HtmlStrip(config),
     'ExactMatch': (config) => t.ExactMatch(config),
     'Punctuation': (config) => t.Punctuation(config),
     'Trim': (config) => t.Trim(config),
@@ -99,8 +100,7 @@ class DsBuild {
     for (int i = 0; i < repository.descriptor.inputs.length; i++) {
       InputDescriptor input = repository.descriptor.inputs[i];
       if (input.source == null) {
-        log.info(
-            "Skipping download for ${input.path} (No source Uri specified)");
+        log.info("Skipping retrieval for ${input.path} (No source uri)");
         continue;
       }
       if (await File(input.path).exists()) {
