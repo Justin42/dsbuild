@@ -1,7 +1,7 @@
 import '../model/conversation.dart';
 
 abstract class Reader {
-  final Map<String, dynamic> config;
+  final Map config;
 
   const Reader(this.config);
 

@@ -1,6 +1,6 @@
 class FileVerificationError {
   final String path;
-  final Uri source;
+  final String source;
   final String expected;
   final String actual;
 

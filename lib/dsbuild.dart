@@ -25,27 +25,24 @@ class DsBuild {
 
   static Logger log = Logger("dsbuild");
 
-  static final Map<String, Preprocessor Function(Map<String, dynamic>)>
-      builtinPreprocessors = {
+  static final Map<String, Preprocessor Function(Map)> builtinPreprocessors = {
     'ExactMatch': (config) => t.ExactMatch(config),
     'Punctuation': (config) => t.Punctuation(config),
     'Trim': (config) => t.Trim(config),
     'Unicode': (config) => t.Unicode(config)
   };
 
-  static final Map<String, Postprocessor Function(Map<String, dynamic>)>
-      builtinPostprocessors = {
+  static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
+      {
     //'Unicode': (config) => Unicode(config),
   };
 
-  static final Map<String, Reader Function(Map<String, dynamic>)>
-      builtinReaders = {
+  static final Map<String, Reader Function(Map)> builtinReaders = {
     'csv': (config) => CsvReader(config),
     'fastchat': (config) => FastChatReader(config),
   };
 
-  static final Map<String, Writer Function(Map<String, dynamic>)>
-      builtinWriters = {
+  static final Map<String, Writer Function(Map)> builtinWriters = {
     'fastchat': (config) => FastChatWriter(config),
     'dsbuild': (config) => DsBuildWriter(config)
   };
@@ -101,15 +98,20 @@ class DsBuild {
     HttpClient client = HttpClient();
     for (int i = 0; i < repository.descriptor.inputs.length; i++) {
       InputDescriptor input = repository.descriptor.inputs[i];
+      if (input.source == null) {
+        log.info(
+            "Skipping download for ${input.path} (No source Uri specified)");
+        continue;
+      }
       if (await File(input.path).exists()) {
         log.fine("Skipping fetch for existing input file '${input.path}'");
       } else {
-        if (!['http', 'https'].contains(input.source.scheme)) {
+        if (!['http', 'https'].contains(input.source!.scheme)) {
           log.severe("Unhandled URI input: '${input.source}'");
           continue;
         }
         log.info("Retrieving ${input.source}");
-        final request = await client.getUrl(input.source);
+        final request = await client.getUrl(input.source!);
         final response = await request.close();
         if (response.statusCode != HttpStatus.ok) {
           log.warning(
@@ -195,7 +197,8 @@ class DsBuild {
   /// yields MessageEnvelope for each message.
   Stream<MessageEnvelope> read(InputDescriptor inputDescriptor) =>
       registry.readers[inputDescriptor.reader.type]!
-          .call({}).read(inputDescriptor.path);
+          .call(inputDescriptor.reader.config)
+          .read(inputDescriptor.path);
 
   /// Write the conversation stream to all outputs.
   /// yields OutputDescriptor for each output.

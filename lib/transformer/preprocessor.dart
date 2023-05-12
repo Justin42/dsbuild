@@ -6,7 +6,7 @@ abstract class Preprocessor {
   String get description;
 
   final String stepDescription;
-  final Map<String, dynamic> config;
+  final Map config;
 
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer;
 

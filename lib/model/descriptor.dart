@@ -43,15 +43,19 @@ class DatasetDescriptor {
 
 class ReaderDescriptor {
   final String type;
-  final Map<String, dynamic> config;
+  final Map<dynamic, dynamic> config;
 
   const ReaderDescriptor(this.type, this.config);
+
+  ReaderDescriptor.fromYaml(YamlMap data)
+      : type = data['type'],
+        config = data['config'];
 }
 
 class InputDescriptor {
   final String path;
   final String description;
-  final Uri source;
+  final Uri? source;
   final String? hash;
   final ReaderDescriptor reader;
   final List<StepDescriptor> steps;
@@ -63,12 +67,11 @@ class InputDescriptor {
   InputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
         description = data['description'],
-        source = Uri.parse(data['source']),
+        source = data['source'] != null ? Uri.parse(data['source']) : null,
         hash = data['sha512'],
         reader = (data['reader'] is String)
             ? ReaderDescriptor(data['reader'], {})
-            : ReaderDescriptor(
-                data['reader']['type'], data['reader']['config'] ?? {}),
+            : ReaderDescriptor.fromYaml(data['reader']),
         steps = [
           if (data['steps'] != null)
             for (var step in data['steps'])

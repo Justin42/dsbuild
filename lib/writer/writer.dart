@@ -1,7 +1,7 @@
 import '../model/conversation.dart';
 
 abstract class Writer {
-  final Map<String, dynamic> config;
+  final Map config;
 
   const Writer(this.config);
 

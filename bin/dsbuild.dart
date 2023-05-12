@@ -29,6 +29,7 @@ void main(List<String> args) async {
   DatasetDescriptor descriptor;
   try {
     YamlMap data = loadYaml(await File(descriptorPath).readAsString());
+    //print(data.toString());
     descriptor = DatasetDescriptor.fromYaml(data);
   } on PathNotFoundException catch (ex) {
     log.severe("No descriptor found at $descriptorPath: ${ex.message}");
@@ -62,7 +63,7 @@ void main(List<String> args) async {
         Digest hash = await sha512.bind(File(input.path).openRead()).last;
         if (hash.toString() != input.hash!) {
           FileVerificationError error = FileVerificationError(
-              input.path, input.source, input.hash!, hash.toString());
+              input.path, input.path, input.hash!, hash.toString());
           log.severe(error);
           hashErrors.add(error);
         } else {
@@ -82,7 +83,7 @@ void main(List<String> args) async {
 
     // Update descriptors with any newly generated hashes.
     for (InputDescriptor input in hashUpdates) {
-      dsBuild.repository.updateInputHash(input.source, input.hash!);
+      dsBuild.repository.updateInputHash(input.path, input.hash!);
     }
   }
 

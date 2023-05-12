@@ -20,17 +20,18 @@ class CsvReader extends Reader {
     yield* Utf8Decoder()
         .bind(File(source).openRead())
         .transform(CsvToListConverter())
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+        .transform(StreamTransformer.fromHandlers(
+            handleData: (List<dynamic> data, sink) {
       // Extract column indexes for configured columns
       // The config could just take col indices instead.
       // This is more human friendly.
       if (header) {
         for (int i = 0; i < data.length; i++) {
-          if (data[i] == config['conversation']) {
+          if (data[i] == config['fields']['conversation']) {
             convoIdCol = i;
-          } else if (data[i] == config['from']) {
+          } else if (data[i] == config['fields']['from']) {
             fromCol = i;
-          } else if (data[i] == config['message']) {
+          } else if (data[i] == config['fields']['message']) {
             messageCol = i;
           }
         }
