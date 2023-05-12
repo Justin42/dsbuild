@@ -27,10 +27,11 @@ class DsBuild {
 
   static final Map<String, Preprocessor Function(Map)> builtinPreprocessors = {
     'HtmlStrip': (config) => t.HtmlStrip(config),
-    'ExactMatch': (config) => t.ExactMatch(config),
-    'Punctuation': (config) => t.Punctuation(config),
+    //'ExactMatch': (config) => t.ExactReplace(config),
+    //'Punctuation': (config) => t.Punctuation(config),
     'Trim': (config) => t.Trim(config),
-    'Unicode': (config) => t.Unicode(config)
+    'RegexReplace': (config) => t.RegexReplace(config),
+    //'Unicode': (config) => t.Unicode(config)
   };
 
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
