@@ -166,6 +166,7 @@ class DsBuild {
             convoMessages = [];
           }
           convoId = data.conversationId;
+          convoMessages.add(Message(data.from, data.value));
         } else {
           convoMessages.add(Message(data.from, data.value));
         }
