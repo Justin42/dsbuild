@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:collection';
 
+import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:html/parser.dart';
 
 import '../model/conversation.dart';
@@ -14,9 +16,8 @@ class HtmlStrip extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        sink.add(data.copyWith(
-            message: data.message
-                .copyWith(value: parseFragment(data.message.value).text)));
+        sink.add(
+            data.copyWithValue(parseFragment(data.message.value).text ?? ""));
       });
 }
 
@@ -29,8 +30,7 @@ class Trim extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        sink.add(data.copyWith(
-            message: data.message.copyWith(value: data.message.value.trim())));
+        sink.add(data.copyWithValue(data.message.value.trim()));
       });
 }
 
@@ -60,30 +60,64 @@ class RegexReplace extends Preprocessor {
       });
 }
 
-/*class ExactReplace extends Preprocessor {
-  const ExactReplace(super.config);
+class ExactReplace extends Preprocessor {
+  List replacements;
+
+  ExactReplace(super.config) : replacements = config['replacements'];
 
   @override
-  String get description =>
-      "Prune or strip messages exactly matching the provided text";
+  String get description => "Simple substitution on exact match.";
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        String newText = data.value;
+        for (List replacement in replacements) {
+          newText = newText.replaceAll(replacement[0], replacement[1]);
+        }
+        sink.add(data.copyWithValue(newText));
+      });
 }
 
-class PatternMatch extends Preprocessor {
-  const PatternMatch(super.config);
+enum ExactMatchAction { drop }
+
+class ExactMatch extends Preprocessor {
+  List<String> patterns;
+  ExactMatchAction action;
+  bool caseSensitive;
+
+  ExactMatch(super.config)
+      : patterns = [for (String patterns in config['patterns']) patterns],
+        action = ExactMatchAction.values.byName(config['action']),
+        caseSensitive = config['caseSensitive'];
 
   @override
-  String get description =>
-      "Prune or strip messages matching the provided pattern.";
+  String get description {
+    switch (action) {
+      case ExactMatchAction.drop:
+        return "Drop messages that exactly match the provided pattern.";
+        break;
+    }
+  }
 
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data));
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        for (String pattern in patterns) {
+          switch (action) {
+            case ExactMatchAction.drop:
+              if (caseSensitive &&
+                  (data.value.toLowerCase() == pattern.toLowerCase())) {
+                continue;
+              } else if (data.value == pattern) {
+                continue;
+              }
+              break;
+          }
+          sink.add(data);
+          break;
+        }
+      });
 }
 
 class Punctuation extends Preprocessor {

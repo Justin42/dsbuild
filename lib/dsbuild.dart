@@ -31,6 +31,8 @@ class DsBuild {
     //'Punctuation': (config) => t.Punctuation(config),
     'Trim': (config) => t.Trim(config),
     'RegexReplace': (config) => t.RegexReplace(config),
+    'ExactReplace': (config) => t.ExactReplace(config),
+    'ExactMatch': (config) => t.ExactMatch(config),
     //'Unicode': (config) => t.Unicode(config)
   };
 
