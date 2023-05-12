@@ -61,7 +61,7 @@ class RegexReplace extends Preprocessor {
 }
 
 class ExactReplace extends Preprocessor {
-  List replacements;
+  final List replacements;
 
   ExactReplace(super.config) : replacements = config['replacements'];
 
@@ -82,9 +82,9 @@ class ExactReplace extends Preprocessor {
 enum ExactMatchAction { drop }
 
 class ExactMatch extends Preprocessor {
-  List<String> patterns;
-  ExactMatchAction action;
-  bool caseSensitive;
+  final List<String> patterns;
+  final ExactMatchAction action;
+  final bool caseSensitive;
 
   ExactMatch(super.config)
       : patterns = [for (String patterns in config['patterns']) patterns],
