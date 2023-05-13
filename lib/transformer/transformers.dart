@@ -87,7 +87,7 @@ class RegexExtract extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        // convoId/username:
+        // convoId / username:
         // match1
         // match2
         // ...
@@ -98,7 +98,7 @@ class RegexExtract extends Preprocessor {
         for (RegExp pattern in regex) {
           data.value.replaceAllMapped(pattern, (match) {
             if (!matches) {
-              ioSink?.writeln("${data.conversationId}/${data.from}:");
+              ioSink?.writeln("${data.conversationId} / ${data.from}:");
               matches = true;
             }
             if (escape) {
@@ -205,7 +205,7 @@ class Participants extends Postprocessor {
   Participants(super.config)
       : min = config['min'] ?? 0,
         max = config['max'],
-        alternating = config['alternating'];
+        alternating = config['alternating'] ?? false;
 
   @override
   String get description =>
@@ -223,14 +223,14 @@ class Participants extends Postprocessor {
             break;
           }
           participants.add(message.from);
-          lastParticipant ??= message.from;
+          lastParticipant = message.from;
           if (max != null && participants.length > max!) {
             skip = true;
             break;
           }
         }
-        if (!skip && participants.length > min) {
-          print(participants.length);
+        if (participants.length < min) skip = true;
+        if (!skip) {
           sink.add(data);
         }
       });
