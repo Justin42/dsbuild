@@ -27,18 +27,16 @@ class DsBuild {
 
   static final Map<String, Preprocessor Function(Map)> builtinPreprocessors = {
     'HtmlStrip': (config) => t.HtmlStrip(config),
-    //'ExactMatch': (config) => t.ExactReplace(config),
-    //'Punctuation': (config) => t.Punctuation(config),
     'Trim': (config) => t.Trim(config),
     'RegexReplace': (config) => t.RegexReplace(config),
     'ExactReplace': (config) => t.ExactReplace(config),
     'ExactMatch': (config) => t.ExactMatch(config),
-    //'Unicode': (config) => t.Unicode(config)
+    'RegexExtract': (config) => t.RegexExtract(config),
   };
 
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
       {
-    //'Unicode': (config) => Unicode(config),
+    'Participants': (config) => t.Participants(config),
   };
 
   static final Map<String, Reader Function(Map)> builtinReaders = {
@@ -48,7 +46,7 @@ class DsBuild {
 
   static final Map<String, Writer Function(Map)> builtinWriters = {
     'fastchat': (config) => FastChatWriter(config),
-    'dsbuild': (config) => DsBuildWriter(config)
+    'dsbuild': (config) => DsBuildWriter(config),
   };
 
   DsBuild(DatasetDescriptor descriptor,
@@ -81,7 +79,7 @@ class DsBuild {
     for (OutputDescriptor output in repository.descriptor.outputs) {
       for (StepDescriptor step in output.steps) {
         if (!registry.postprocessors.containsKey(step.type)) {
-          errors.add("No postprocessor matching type '${output.format}");
+          errors.add("No postprocessor matching type '${step.type}'");
         }
       }
     }
