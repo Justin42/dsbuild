@@ -155,12 +155,12 @@ class ExactReplace extends Preprocessor {
 
 enum ExactMatchAction { drop }
 
-class ExactMatch extends Preprocessor {
+class FullMatch extends Preprocessor {
   final List<String> patterns;
   final ExactMatchAction action;
   final bool caseSensitive;
 
-  ExactMatch(super.config)
+  FullMatch(super.config)
       : patterns = [for (String patterns in config['patterns']) patterns],
         action = ExactMatchAction.values.byName(config['action']),
         caseSensitive = config['caseSensitive'] ?? true;

@@ -30,7 +30,7 @@ class DsBuild {
     'Trim': (config) => t.Trim(config),
     'RegexReplace': (config) => t.RegexReplace(config),
     'ExactReplace': (config) => t.ExactReplace(config),
-    'ExactMatch': (config) => t.ExactMatch(config),
+    'FullMatch': (config) => t.FullMatch(config),
     'RegexExtract': (config) => t.RegexExtract(config),
   };
 
