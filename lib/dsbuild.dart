@@ -37,6 +37,7 @@ class DsBuild {
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
       {
     'Participants': (config) => t.Participants(config),
+    'RenameParticipants': (config) => t.RenameParticipants(config),
   };
 
   static final Map<String, Reader Function(Map)> builtinReaders = {
