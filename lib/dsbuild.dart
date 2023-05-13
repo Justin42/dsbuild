@@ -144,8 +144,8 @@ class DsBuild {
       Stream<Conversation> conversations, OutputDescriptor output) {
     Stream<Conversation> pipeline = conversations;
     for (StepDescriptor step in output.steps) {
-      pipeline = pipeline
-          .transform(registry.postprocessors[step.type]!.call({}).transformer);
+      pipeline = pipeline.transform(
+          registry.postprocessors[step.type]!.call(step.config).transformer);
     }
     return pipeline;
   }
@@ -177,7 +177,8 @@ class DsBuild {
   }
 
   /// Transform each input according to it's InputDescriptor.
-  /// The transformation output is concatenated, in the order of input, into a single Conversation stream.
+  /// The transformation output is concatenated, in the order of input, into a single Conversation stream
+  /// The stream
   Stream<Conversation> transformAll() async* {
     List<Stream<MessageEnvelope>> pending = [];
     for (InputDescriptor inputDescriptor in repository.descriptor.inputs) {
@@ -204,12 +205,15 @@ class DsBuild {
           .read(inputDescriptor.path);
 
   /// Write the conversation stream to all outputs.
-  /// yields OutputDescriptor for each output.
+  /// Performs any postprocessing steps for each output.
+  /// yields OutputDescriptor for each completed output.
   Stream<OutputDescriptor> writeAll(Stream<Conversation> conversations) async* {
     final List<Conversation> collected = await conversations.toList();
 
     for (OutputDescriptor descriptor in repository.descriptor.outputs) {
-      await write(Stream.fromIterable(collected), descriptor).drain();
+      await write(postProcess(Stream.fromIterable(collected), descriptor),
+              descriptor)
+          .drain();
       yield descriptor;
     }
   }
