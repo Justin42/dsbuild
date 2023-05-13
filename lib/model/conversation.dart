@@ -11,6 +11,11 @@ class Conversation {
       'messages': [for (Message message in messages) message.toJson()]
     };
   }
+
+  Conversation copyWith(
+          {int? id, List<Message>? messages, Map<String, dynamic>? meta}) =>
+      Conversation(id ?? this.id,
+          messages: messages ?? this.messages, meta: meta ?? this.meta);
 }
 
 class Message {
@@ -25,6 +30,10 @@ class Message {
 
   Message copyWith({String? from, String? value}) =>
       Message(from ?? this.from, value ?? this.value);
+
+  Message.empty()
+      : from = "",
+        value = "";
 }
 
 class MessageEnvelope {
