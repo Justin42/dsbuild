@@ -30,7 +30,7 @@ class DatasetDescriptor {
   DatasetDescriptor.fromYaml(YamlMap data)
       : name = data['name'] ?? 'default',
         description = data['description'] ?? 'No description',
-        generateReadme = data['build']['generateReadme'] ?? true,
+        generateReadme = data['build']['generateReadme'] ?? false,
         generateHashes = data['build']['generateHashes'] ?? true,
         verifyHashes = data['build']['verifyHashes'] ?? true,
         inputs = [
