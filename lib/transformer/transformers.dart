@@ -63,6 +63,37 @@ class RegexReplace extends Preprocessor {
       });
 }
 
+class RegexReplacePost extends Postprocessor {
+  final List<RegExp> regex;
+
+  RegexReplacePost(super.config)
+      : regex = [
+          for (List r in config['replacements'])
+            RegExp(r[0],
+                multiLine: config['multiLine'] ?? false,
+                caseSensitive: config['caseSensitive'] ?? true,
+                unicode: config['unicode'] ?? false,
+                dotAll: config['dotAll'] ?? false)
+        ];
+
+  @override
+  String get description => "Regex pattern replacement";
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWith(
+            messages: data.messages.map((e) {
+          for (int i = 0; i < regex.length; i++) {
+            e = e.copyWith(
+                value:
+                    e.value.replaceAll(regex[i], config['replacements'][i][1]));
+          }
+          return e;
+        }).toList()));
+      });
+}
+
 class RegexExtract extends Preprocessor {
   final List<RegExp> regex;
   final File file;
@@ -154,22 +185,58 @@ class ExactReplace extends Preprocessor {
       });
 }
 
-enum ExactMatchAction { drop }
+class ExactReplacePost extends Postprocessor {
+  final List replacements;
+  final bool recursive;
+
+  ExactReplacePost(super.config)
+      : replacements = config['replacements'],
+        recursive = config['recursive'] ?? false;
+
+  @override
+  String get description => "Simple substitution on exact match.";
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        List<Message> messages =
+            List.filled(data.messages.length, Message.empty());
+        for (int i = 0; i < data.messages.length; i++) {
+          String lastText = data.messages[i].value;
+          List<bool> hasMatches = List.filled(replacements.length, false);
+          do {
+            for (int i = 0; i < replacements.length; i++) {
+              hasMatches[i] = false;
+              String text =
+                  lastText.replaceAll(replacements[i][0], replacements[i][1]);
+              if (text != lastText) {
+                lastText = text;
+                hasMatches[i] = true;
+              }
+            }
+          } while (hasMatches.contains(true) && recursive);
+          messages[i] = data.messages[i].copyWith(value: lastText);
+        }
+        sink.add(data.copyWith(messages: messages));
+      });
+}
+
+enum FullMatchAction { drop }
 
 class FullMatch extends Preprocessor {
   final List<String> patterns;
-  final ExactMatchAction action;
+  final FullMatchAction action;
   final bool caseSensitive;
 
   FullMatch(super.config)
       : patterns = [for (String patterns in config['patterns']) patterns],
-        action = ExactMatchAction.values.byName(config['action']),
+        action = FullMatchAction.values.byName(config['action']),
         caseSensitive = config['caseSensitive'] ?? true;
 
   @override
   String get description {
     switch (action) {
-      case ExactMatchAction.drop:
+      case FullMatchAction.drop:
         return "Drop messages that exactly match the provided pattern.";
     }
   }
@@ -180,7 +247,7 @@ class FullMatch extends Preprocessor {
         bool skip = false;
         for (String pattern in patterns) {
           switch (action) {
-            case ExactMatchAction.drop:
+            case FullMatchAction.drop:
               if (!caseSensitive &&
                   (data.value.toLowerCase() == pattern.toLowerCase())) {
                 skip = true;
@@ -195,6 +262,53 @@ class FullMatch extends Preprocessor {
         if (!skip) {
           sink.add(data);
         }
+      });
+}
+
+class FullMatchPost extends Postprocessor {
+  final List<String> patterns;
+  final FullMatchAction action;
+  final bool caseSensitive;
+
+  FullMatchPost(super.config)
+      : patterns = [for (String patterns in config['patterns']) patterns],
+        action = FullMatchAction.values.byName(config['action']),
+        caseSensitive = config['caseSensitive'] ?? true;
+
+  @override
+  String get description {
+    switch (action) {
+      case FullMatchAction.drop:
+        return "Drop messages that exactly match the provided pattern.";
+    }
+  }
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        List<Message> messages = [];
+        for (int i = 0; i < data.messages.length; i++) {
+          bool skip = false;
+          for (String pattern in patterns) {
+            switch (action) {
+              case FullMatchAction.drop:
+                if (!caseSensitive &&
+                    (data.messages[i].value.toLowerCase() ==
+                        pattern.toLowerCase())) {
+                  skip = true;
+                  break;
+                } else if (data.messages[i].value == pattern) {
+                  skip = true;
+                  break;
+                }
+            }
+            if (skip) break;
+          }
+          if (!skip) {
+            messages.add(data.messages[i]);
+          }
+        }
+        sink.add(data.copyWith(messages: messages));
       });
 }
 
@@ -345,35 +459,3 @@ class TrimPost extends Postprocessor {
                 .toList()));
       });
 }
-
-/*
-class Punctuation extends Preprocessor {
-  const Punctuation(super.config);
-
-  @override
-  String get description =>
-      "Trivial adjustments to whitespace and punctuation.";
-
-  @override
-  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data),
-          handleDone: (sink) {
-            sink.close();
-          });
-}
-
-class Unicode extends Preprocessor {
-  const Unicode(super.config);
-
-  @override
-  String get description => "Prune or strip messages containing unicode.";
-
-  @override
-  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(
-          handleData: (data, sink) => sink.add(data),
-          handleDone: (sink) {
-            sink.close();
-          });
-}*/

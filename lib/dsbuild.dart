@@ -41,6 +41,9 @@ class DsBuild {
     'RenameParticipants': (config) => t.RenameParticipants(config),
     'Encoding': (config) => t.EncodingPost(config),
     'Trim': (config) => t.TrimPost(config),
+    'RegexReplace': (config) => t.RegexReplacePost(config),
+    'ExactReplace': (config) => t.ExactReplacePost(config),
+    'FullMatch': (config) => t.FullMatchPost(config),
   };
 
   static final Map<String, Reader Function(Map)> builtinReaders = {
