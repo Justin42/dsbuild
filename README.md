@@ -17,9 +17,8 @@ The processing pipeline is as follows:
 The responsibilities for each component of the pipeline are as follows:
 
 - **Readers**: Responsible for acquiring and formatting the data in a unified way to be fed to the preprocessors.
-  Readers output a MessageEnvelope stream. Each MessageEnvelope contains information about it's parent conversation, in
-  addition to the message itself. This step *may* be run in parallel for each input. Data input from readers must fully
-  fit in RAM.
+  Readers output a MessageEnvelope stream. Each MessageEnvelope contains information about its parent conversation, in
+  addition to the message itself. This step *may* be run in parallel for each input.
 
 
 - **Preprocessors**: Responsible for preparing the data for merge. Multiple preprocessors may be applied sequentially.
