@@ -10,21 +10,31 @@ class FastChatWriter extends Writer {
   const FastChatWriter(super.config);
 
   @override
-  Stream<Conversation> write(Stream<Conversation> conversations,
-      String destination) async* {
+  Stream<Conversation> write(
+      Stream<Conversation> conversations, String destination) async* {
     IOSink ioSink = await File(destination)
         .create(recursive: true)
         .then((value) => value.openWrite());
     ioSink.writeln("[");
-
-    yield* conversations.map((event) {
-      ioSink
-          .write(jsonEncode({'id': event.id, 'conversations': event.messages}));
-      ioSink.write(',\n');
-      return event;
-    });
-
-    ioSink.writeln("]");
-    ioSink.close();
+    StringBuffer buffer = StringBuffer();
+    yield* conversations
+        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+      if (buffer.isEmpty) {
+        buffer
+            .write(jsonEncode({'id': data.id, 'conversations': data.messages}));
+      } else {
+        ioSink.write(buffer);
+        ioSink.write(",\n");
+        buffer.clear();
+        buffer
+            .write(jsonEncode({'id': data.id, 'conversations': data.messages}));
+      }
+      sink.add(data);
+    }, handleDone: (sink) {
+      ioSink.writeln(buffer);
+      ioSink.write("]");
+      buffer.clear();
+      ioSink.close();
+    }));
   }
 }
