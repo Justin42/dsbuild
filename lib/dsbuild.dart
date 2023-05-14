@@ -32,12 +32,15 @@ class DsBuild {
     'ExactReplace': (config) => t.ExactReplace(config),
     'FullMatch': (config) => t.FullMatch(config),
     'RegexExtract': (config) => t.RegexExtract(config),
+    'Encoding': (config) => t.EncodingPre(config),
   };
 
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
       {
     'Participants': (config) => t.Participants(config),
     'RenameParticipants': (config) => t.RenameParticipants(config),
+    'Encoding': (config) => t.EncodingPost(config),
+    'Trim': (config) => t.TrimPost(config),
   };
 
   static final Map<String, Reader Function(Map)> builtinReaders = {

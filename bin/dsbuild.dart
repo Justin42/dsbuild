@@ -101,6 +101,7 @@ void main(List<String> args) async {
   }, handleDone: (sink) {
     stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
     log.info(jsonEncode(stats, toEncodable: (obj) => obj.toString()));
+    log.info("Transformations complete. Finalizing output...");
     sink.close();
   });
 

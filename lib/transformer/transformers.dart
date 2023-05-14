@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dsbuild/transformer/postprocessor.dart';
@@ -233,6 +234,115 @@ class Participants extends Postprocessor {
         if (!skip) {
           sink.add(data);
         }
+      });
+}
+
+class RenameParticipants extends Postprocessor {
+  List<String> names;
+
+  RenameParticipants(super.config)
+      : names = [for (var name in config['names']) name as String];
+
+  @override
+  String get description => "Rename participants";
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        Map<String, String> renameMap = {};
+        List<Message> messages = [];
+        for (final Message message in data.messages) {
+          if (!renameMap.containsKey(message.from)) {
+            if (renameMap.length < names.length) {
+              messages.add(message.copyWith(from: names[renameMap.length]));
+              renameMap[message.from] = names[renameMap.length];
+            } else {
+              messages.add(message);
+            }
+          } else {
+            messages.add(message.copyWith(from: renameMap[message.from]));
+          }
+        }
+        sink.add(data.copyWith(messages: messages));
+      });
+}
+
+class EncodingPre extends Preprocessor {
+  String codecName;
+  String invalidChar;
+  Codec<String, List<int>>? codec;
+
+  EncodingPre(super.config)
+      : invalidChar = config['invalid'] ?? r'�',
+        codecName = config['codec'] {
+    if (codecName == 'us-ascii') {
+      codec = AsciiCodec(allowInvalid: true);
+    } else if (codecName == 'utf-8') {
+      codec = Utf8Codec(allowMalformed: true);
+    } else if (codecName == 'iso-8859-1') {
+      codec = Latin1Codec(allowInvalid: true);
+    }
+  }
+
+  @override
+  String get description =>
+      "Effectively strips character codes not present in the specified encoding. Does not affect output encoding.";
+
+  @override
+  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWithValue(
+            codec!.decode(data.value.codeUnits).replaceAll(r'�', invalidChar)));
+      });
+}
+
+class EncodingPost extends Postprocessor {
+  String codecName;
+  String invalidChar;
+  Codec<String, List<int>>? codec;
+
+  EncodingPost(super.config)
+      : invalidChar = config['invalid'] ?? r'�',
+        codecName = config['codec'] {
+    if (codecName == 'us-ascii') {
+      codec = AsciiCodec(allowInvalid: true);
+    } else if (codecName == 'utf-8') {
+      codec = Utf8Codec(allowMalformed: true);
+    } else if (codecName == 'iso-8859-1') {
+      codec = Latin1Codec(allowInvalid: true);
+    }
+  }
+
+  @override
+  String get description =>
+      "Effectively strips character codes not present in the specified encoding. Does not affect output encoding.";
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWith(
+            messages: data.messages
+                .map<Message>((message) => message.copyWith(
+                    value: codec!
+                        .decode(message.value.codeUnits)
+                        .replaceAll(r'�', invalidChar)))
+                .toList(growable: false)));
+      });
+}
+
+class TrimPost extends Postprocessor {
+  const TrimPost(super.config);
+
+  @override
+  String get description => "Trim whitespace and trailing line endings.";
+
+  @override
+  StreamTransformer<Conversation, Conversation> get transformer =>
+      StreamTransformer.fromHandlers(handleData: (data, sink) {
+        sink.add(data.copyWith(
+            messages: data.messages
+                .map((message) => message.copyWith(value: message.value.trim()))
+                .toList()));
       });
 }
 
