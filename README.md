@@ -3,7 +3,7 @@
 This tool is designed to help users clean and prepare their datasets for use in language model (LM) training. It is
 built using the Dart programming language and utilizes YAML configuration to describe the steps used to construct the
 dataset. The goal is to enable easy review, replication, and iteration upon the dataset, making it easier for users to
-train high-quality LM models.
+train high-quality language models.
 
 Key Features:
 
