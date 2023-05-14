@@ -10,15 +10,6 @@ Key Features:
 - YAML configuration for easy review, replication, and iteration.
 - Common text transformers for pruning or stripping messages.
 
-Current Limitations:
-
-- No parquet support.
-- No VCS / external command support.
-- No chunked file input. The entire dataset must fit in RAM. (Streaming output and parallel input processing are both
-  supported.)
-- No split output or parallel postprocessing. The API does allow for custom postprocessors to redistribute their own
-  workloads.
-
 The processing pipeline is as follows:
 
 **Reader -> Preprocessor -> Concatenate -> Postprocessor -> Writer**
