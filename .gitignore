@@ -4,4 +4,4 @@
 .idea
 data
 dataset*.yaml
-out/*
+out
