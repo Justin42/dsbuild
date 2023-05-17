@@ -108,7 +108,7 @@ class DsBuild {
     for (int i = 0; i < repository.descriptor.inputs.length; i++) {
       InputDescriptor input = repository.descriptor.inputs[i];
       if (input.source == null) {
-        log.info("Skipping retrieval for ${input.path} (No source uri)");
+        //log.info("Skipping retrieval for ${input.path} (No source uri)");
         continue;
       }
       if (await File(input.path).exists()) {
