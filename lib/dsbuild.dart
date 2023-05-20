@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/progress/progress.dart';
 import 'package:dsbuild/reader/csv_reader.dart';
 import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:dsbuild/writer/dsbuild_writer.dart';
@@ -22,6 +23,7 @@ class DsBuild {
   final Config config;
   final Repository repository;
   final Registry registry;
+  final ProgressBloc progress;
 
   static Logger log = Logger("dsbuild");
 
@@ -62,7 +64,10 @@ class DsBuild {
         registry = registry ??
             Registry(builtinReaders, builtinWriters,
                 preprocessors: builtinPreprocessors,
-                postprocessors: builtinPostprocessors);
+                postprocessors: builtinPostprocessors),
+        progress = ProgressBloc(ProgressState(
+            totalInputFiles: descriptor.inputs.length,
+            totalOutputFiles: descriptor.outputs.length));
 
   /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
@@ -138,11 +143,23 @@ class DsBuild {
   /// Perform the specified transformation steps.
   Stream<MessageEnvelope> transform(
       Stream<MessageEnvelope> messages, List<StepDescriptor> steps) {
-    Stream<MessageEnvelope> pipeline = messages;
+    Stream<MessageEnvelope> pipeline = messages
+        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+      progress.add(const MessageRead());
+      sink.add(data);
+    }));
     for (StepDescriptor step in steps) {
       pipeline = pipeline.transform(
           registry.preprocessors[step.type]!.call(step.config).transformer);
     }
+
+    // Progress tracking
+    pipeline = pipeline
+        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+      progress.add(const MessageProcessed());
+      sink.add(data);
+    }));
+
     return pipeline;
   }
 
@@ -154,7 +171,11 @@ class DsBuild {
       pipeline = pipeline.transform(
           registry.postprocessors[step.type]!.call(step.config).transformer);
     }
-    return pipeline;
+    return pipeline
+        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+      progress.add(const ConversationProcessed());
+      sink.add(data);
+    }));
   }
 
   /// Utility function to concatenate multiple MessageEnvelope streams.
@@ -179,7 +200,17 @@ class DsBuild {
           convoMessages.add(Message(data.from, data.value));
         }
       });
-      yield* messageStream.transform(concatenatingTransformer);
+
+      // Progress tracking
+      StreamTransformer<Conversation, Conversation> progressTransformer =
+          StreamTransformer.fromHandlers(handleData: (data, sink) {
+        progress.add(const ConversationRead());
+        sink.add(data);
+      });
+
+      yield* messageStream
+          .transform(concatenatingTransformer)
+          .transform(progressTransformer);
     }
   }
 
@@ -213,7 +244,6 @@ class DsBuild {
 
   /// Write the conversation stream to all outputs.
   /// Performs any postprocessing steps for each output.
-  /// yields OutputDescriptor for each completed output.
   Stream<Conversation> writeAll(Stream<Conversation> conversations) async* {
     final List<Conversation> collected = await conversations.toList();
     final Stream<Conversation> out = Stream.fromIterable(collected);

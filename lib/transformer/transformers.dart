@@ -5,9 +5,12 @@ import 'dart:io';
 
 import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:html/parser.dart';
+import 'package:logging/logging.dart';
 
 import '../model/conversation.dart';
 import 'preprocessor.dart';
+
+Logger _log = Logger("dsbuild/transformers");
 
 class HtmlStrip extends Preprocessor {
   HtmlStrip(super.config);
@@ -317,6 +320,8 @@ class Participants extends Postprocessor {
   final int? max;
   final bool alternating;
 
+  int _skipped = 0;
+
   Participants(super.config)
       : min = config['min'] ?? 0,
         max = config['max'],
@@ -347,7 +352,12 @@ class Participants extends Postprocessor {
         if (participants.length < min) skip = true;
         if (!skip) {
           sink.add(data);
+        } else {
+          _skipped += 1;
         }
+      }, handleDone: (sink) {
+        _log.fine("${runtimeType.toString()} dropped $_skipped conversations.");
+        sink.close();
       });
 }
 

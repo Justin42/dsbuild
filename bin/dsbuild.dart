@@ -2,7 +2,6 @@
 // ignore_for_file: sdk_version_since
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -10,13 +9,14 @@ import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/error.dart';
 import 'package:dsbuild/model/conversation.dart';
 import 'package:dsbuild/model/descriptor.dart';
+import 'package:dsbuild/progress/progress.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
   final Logger log = Logger("dsbuild");
 
-  Logger.root.level = Level.ALL;
+  Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((record) {
     print(
         '${record.time}/${record.level.name}/${record.loggerName}: ${record.message}');
@@ -38,6 +38,22 @@ void main(List<String> args) async {
 
   // Initialize DsBuild
   DsBuild dsBuild = DsBuild(descriptor);
+
+  // Progress output
+  DateTime lastProgressOutput = DateTime.timestamp();
+  dsBuild.progress.stream.listen((state) {
+    if (DateTime.timestamp().difference(lastProgressOutput).inSeconds > 5) {
+      lastProgressOutput = DateTime.timestamp();
+      log.fine("Progress:\n"
+          "Messages processed: ${state.messagesProcessed} / ${state.messagesTotal}\n"
+          "Conversations processed: ${state.conversationsProcessed} / ${state.conversationsTotal}");
+    }
+  }, onDone: () {
+    ProgressState state = dsBuild.progress.state;
+    log.fine("Progress:\n"
+        "Messages processed: ${state.messagesProcessed} / ${state.messagesTotal}\n"
+        "Conversations processed: ${state.conversationsProcessed} / ${state.conversationsTotal}");
+  });
 
   // Additional transformers can be registered.
   //dsBuild.registry.registerPreprocessor(name, (config) => Preprocessor())
@@ -78,30 +94,12 @@ void main(List<String> args) async {
     }
   }
 
-  // Stats and progress tracking
-  Map<String, dynamic> stats = {
-    'Total Conversations': 0,
-    'Start Time': DateTime.timestamp(),
-    'Elapsed': Duration
-  };
-
-  StreamTransformer<Conversation, Conversation> statTracker =
-      StreamTransformer.fromHandlers(handleData: (data, sink) {
-    stats['Total Conversations'] += 1;
-    sink.add(data);
-  }, handleDone: (sink) {
-    stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
-    log.info(jsonEncode(stats, toEncodable: (obj) => obj.toString()));
-    log.info("Preprocessing completed.");
-    sink.close();
-  });
-
   log.info("Preparing pipeline...");
-  Stream<Conversation> conversations =
-      dsBuild.transformAll().transform(statTracker);
+  Stream<Conversation> conversations = dsBuild.transformAll();
 
   log.info("Performing transformations...");
   await dsBuild.writeAll(conversations).last;
+  dsBuild.progress.add(const BuildComplete());
   log.info("Output finalized.");
 
   if (dsBuild.repository.descriptor.generateHashes ||
@@ -119,6 +117,7 @@ void main(List<String> args) async {
       log.info(
           "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.path}\nsha512: $hash");
     }
-    log.info("Done.");
   }
+  await dsBuild.progress.close();
+  log.info("Done.");
 }
