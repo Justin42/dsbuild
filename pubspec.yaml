@@ -7,6 +7,7 @@ environment:
   sdk: '^3.0.0-417.4.beta'
 
 dependencies:
+  bloc: ^8.1.1
   crypto: ^3.0.3
   csv: ^5.0.2
   html: ^0.15.3
