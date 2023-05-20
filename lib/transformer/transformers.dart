@@ -16,12 +16,16 @@ Logger _log = Logger("dsbuild/transformers");
 class HtmlStrip extends Preprocessor {
   final bool caseSensitive;
   final List<Pattern> stripAnchorPatterns;
+  final String anchorSelector;
+
+  int strippedAnchors = 0;
 
   HtmlStrip(super.config)
       : caseSensitive = config['caseSensitive'] ?? true,
         stripAnchorPatterns = config['stripAnchorPatterns'] != null
             ? [for (String pattern in config['stripAnchorPatterns']) pattern]
-            : [];
+            : [],
+        anchorSelector = config['anchorSelector'] ?? "a, img";
 
   @override
   String get description => "Strip HTML";
@@ -30,31 +34,28 @@ class HtmlStrip extends Preprocessor {
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         DocumentFragment fragment = parseFragment(data.message.value);
-
         if (stripAnchorPatterns.isNotEmpty) {
           List<Element> removals = [];
-          for (Node node in fragment.nodes) {
-            for (Element child in node.children) {
-              if (const ['a', 'img'].contains(child.localName)) {
-                if (stripAnchorPatterns.isNotEmpty) {
-                  for (Pattern pattern in stripAnchorPatterns) {
-                    if ((caseSensitive && child.text.contains(pattern)) ||
-                        (caseSensitive &&
-                            child.text.toLowerCase().contains(pattern))) {
-                      removals.add(child);
-                      break;
-                    }
-                  }
-                } else {}
+          for (Element child in fragment.querySelectorAll(anchorSelector)) {
+            for (Pattern pattern in stripAnchorPatterns) {
+              if ((caseSensitive && child.text.contains(pattern)) ||
+                  (caseSensitive &&
+                      child.text.toLowerCase().contains(pattern))) {
+                removals.add(child);
+                break;
               }
             }
           }
+          strippedAnchors += removals.length;
           for (Node node in removals) {
             node.remove();
           }
         }
 
         sink.add(data.copyWithValue(fragment.text ?? ""));
+      }, handleDone: (sink) {
+        _log.fine("$runtimeType stripped $strippedAnchors anchor texts.");
+        sink.close();
       });
 }
 
