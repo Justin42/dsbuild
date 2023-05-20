@@ -34,11 +34,13 @@ class FastChatWriter extends Writer {
             encoder.convert({'id': data.id, 'conversations': data.messages}));
       }
       sink.add(data);
-    }, handleDone: (sink) {
+    }, handleDone: (sink) async {
       ioSink.writeln(buffer);
       ioSink.write("]");
+      await ioSink.flush();
       buffer.clear();
       ioSink.close();
+      sink.close();
     }));
   }
 }

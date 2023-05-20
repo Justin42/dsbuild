@@ -214,14 +214,17 @@ class DsBuild {
   /// Write the conversation stream to all outputs.
   /// Performs any postprocessing steps for each output.
   /// yields OutputDescriptor for each completed output.
-  Stream<OutputDescriptor> writeAll(Stream<Conversation> conversations) async* {
+  Stream<Conversation> writeAll(Stream<Conversation> conversations) async* {
     final List<Conversation> collected = await conversations.toList();
+    final Stream<Conversation> out = Stream.fromIterable(collected);
 
     for (OutputDescriptor descriptor in repository.descriptor.outputs) {
-      await write(postProcess(Stream.fromIterable(collected), descriptor),
-              descriptor)
-          .drain();
-      yield descriptor;
+      log.info("Postprocessing ${descriptor.path}");
+      Stream<Conversation> processed = postProcess(out, descriptor);
+      await write(processed, descriptor).last;
+      log.info(
+          "Finalized output ${descriptor.path} - ${descriptor.description}");
     }
+    yield* out;
   }
 }
