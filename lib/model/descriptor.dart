@@ -105,14 +105,17 @@ class InputDescriptor {
 class OutputDescriptor {
   final String path;
   final String description;
+  final String? hash;
   final WriterDescriptor writer;
   final List<StepDescriptor> steps;
 
-  OutputDescriptor(this.path, this.description, this.writer, this.steps);
+  OutputDescriptor(this.path, this.description, this.writer, this.steps,
+      {this.hash});
 
   OutputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
         description = data['description'] ?? 'Output Data',
+        hash = data['sha512'],
         writer = (data['writer'] is String)
             ? WriterDescriptor(data['writer'], {})
             : WriterDescriptor.fromYaml(data['writer']),

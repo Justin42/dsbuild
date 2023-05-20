@@ -53,37 +53,28 @@ void main(List<String> args) async {
     log.config("Descriptor valid.");
   }
 
-  // Retrieve and verify input
-  {
-    List<FileVerificationError> hashErrors = [];
-    List<InputDescriptor> hashUpdates = [];
-    await dsBuild.fetchRequirements().forEach((input) async {
-      if (input.hash != null) {
-        log.info("Verifying hash for ${input.path}");
-        Digest hash = await sha512.bind(File(input.path).openRead()).last;
-        if (hash.toString() != input.hash!) {
-          FileVerificationError error = FileVerificationError(
-              input.path, input.path, input.hash!, hash.toString());
-          log.severe(error);
-          hashErrors.add(error);
-        } else {
-          log.config("Verified hash for ${input.path}");
-        }
-      } else if (dsBuild.repository.descriptor.generateHashes) {
-        log.info("Generating hash for ${input.path}");
-        Digest hash = await sha512.bind(File(input.path).openRead()).last;
-        log.info(
-            "Generated SHA512 hash.\nFile: ${input.path}\nSource: ${input.source}\nsha512: ${hash.toString()}");
-        hashUpdates.add(input.copyWith(hash: hash.toString()));
-      }
-    });
-    if (hashErrors.isNotEmpty) {
-      exit(1);
-    }
+  await dsBuild.fetchRequirements().forEach((input) async {
+    log.info("${input.source} retrieved.");
+  });
 
-    // Update descriptors with any newly generated hashes.
-    for (InputDescriptor input in hashUpdates) {
-      dsBuild.repository.updateInputHash(input.path, input.hash!);
+  if (dsBuild.repository.descriptor.generateHashes ||
+      dsBuild.repository.descriptor.verifyHashes) {
+    for (int i = 0; i < dsBuild.repository.descriptor.inputs.length; i++) {
+      final InputDescriptor descriptor =
+          dsBuild.repository.descriptor.inputs[i];
+      String hash =
+          (await sha512.bind(File(descriptor.path).openRead()).last).toString();
+      if (dsBuild.repository.descriptor.verifyHashes &&
+          descriptor.hash != null) {
+        if (descriptor.hash != hash) {
+          throw FileVerificationError(descriptor.path,
+              descriptor.source.toString(), descriptor.hash!, hash);
+        }
+      } else if (descriptor.hash != hash) {
+        dsBuild.repository.updateInputHash(descriptor.path, hash);
+      }
+      log.info(
+          "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.source}\nsha512: $hash");
     }
   }
 
@@ -101,7 +92,7 @@ void main(List<String> args) async {
   }, handleDone: (sink) {
     stats['Elapsed'] = DateTime.timestamp().difference(stats['Start Time']);
     log.info(jsonEncode(stats, toEncodable: (obj) => obj.toString()));
-    log.info("Transformations complete. Finalizing output...");
+    log.info("Preprocessing completed.");
     sink.close();
   });
 
@@ -110,5 +101,24 @@ void main(List<String> args) async {
       dsBuild.transformAll().transform(statTracker);
 
   log.info("Performing transformations...");
-  await dsBuild.writeAll(conversations).drain();
+  await dsBuild.writeAll(conversations).last;
+  log.info("Output finalized.");
+
+  if (dsBuild.repository.descriptor.generateHashes ||
+      dsBuild.repository.descriptor.verifyHashes) {
+    log.info("Generating output file hashes.");
+    for (OutputDescriptor descriptor in dsBuild.repository.descriptor.outputs) {
+      String hash =
+          (await sha512.bind(File(descriptor.path).openRead()).last).toString();
+      if (dsBuild.repository.descriptor.verifyHashes &&
+          descriptor.hash != null &&
+          descriptor.hash != hash) {
+        throw FileVerificationError(
+            descriptor.path, "", descriptor.hash!, hash);
+      }
+      log.info(
+          "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.path}\nsha512: $hash");
+    }
+    log.info("Done.");
+  }
 }
