@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dsbuild/transformer/postprocessor.dart';
+import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:logging/logging.dart';
 
@@ -13,7 +14,14 @@ import 'preprocessor.dart';
 Logger _log = Logger("dsbuild/transformers");
 
 class HtmlStrip extends Preprocessor {
-  HtmlStrip(super.config);
+  final bool caseSensitive;
+  final List<Pattern> stripAnchorPatterns;
+
+  HtmlStrip(super.config)
+      : caseSensitive = config['caseSensitive'] ?? true,
+        stripAnchorPatterns = config['stripAnchorPatterns'] != null
+            ? [for (String pattern in config['stripAnchorPatterns']) pattern]
+            : [];
 
   @override
   String get description => "Strip HTML";
@@ -21,8 +29,32 @@ class HtmlStrip extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        sink.add(
-            data.copyWithValue(parseFragment(data.message.value).text ?? ""));
+        DocumentFragment fragment = parseFragment(data.message.value);
+
+        if (stripAnchorPatterns.isNotEmpty) {
+          List<Element> removals = [];
+          for (Node node in fragment.nodes) {
+            for (Element child in node.children) {
+              if (const ['a', 'img'].contains(child.localName)) {
+                if (stripAnchorPatterns.isNotEmpty) {
+                  for (Pattern pattern in stripAnchorPatterns) {
+                    if ((caseSensitive && child.text.contains(pattern)) ||
+                        (caseSensitive &&
+                            child.text.toLowerCase().contains(pattern))) {
+                      removals.add(child);
+                      break;
+                    }
+                  }
+                } else {}
+              }
+            }
+          }
+          for (Node node in removals) {
+            node.remove();
+          }
+        }
+
+        sink.add(data.copyWithValue(fragment.text ?? ""));
       });
 }
 
