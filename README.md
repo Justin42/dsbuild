@@ -36,6 +36,3 @@ The responsibilities for each component of the pipeline are as follows:
 
 
 - **Writers**: Formats and outputs the final Conversation stream.
-
-Current Dart SDK target version is 3.0.0-417.4.beta. This will change to the stable channel after the upcoming Dart 3.0
-release.
