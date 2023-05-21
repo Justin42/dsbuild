@@ -68,7 +68,7 @@ It's also possible to install directly from a remote git repository via\
 *Uninstalling from path:*\
 `dart pub global deactivate dsbuild`
 
-See [dart pub global](https://dart.dev/tools/pub/cmd/pub-globa) for more details.
+See [dart pub global](https://dart.dev/tools/pub/cmd/pub-global) for more details.
 
 #### Build binary (native):
 
