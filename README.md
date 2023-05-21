@@ -36,3 +36,40 @@ The responsibilities for each component of the pipeline are as follows:
 
 
 - **Writers**: Formats and outputs the final Conversation stream.
+
+This application should be compatible with Windows, Linux, and Mac. Including ARM64
+architectures.
+The library *may* also be compatible with Mobile and Web builds if seeking integration with Flutter.
+
+**Currently only Windows builds have been tested. If you experience an issue on other platforms please post an issue
+report.**
+
+### Building and installation
+
+Building requires the Dart SDK, and can be executed or installed the same way as other Dart applications.
+
+#### Run from source (JIT) :
+
+`dart run bin/dsbuild.dart dataset.yaml`
+
+#### Install to path from source (AOT) :
+
+`dart pub global activate -s path ./`
+
+`dsbuild dataset.yaml`
+
+*This is the recommended installation method for developers, and it has the added advantage of automatically rebuilding
+the application after local package changes.*
+
+It's also possible to install directly from a remote git repository via\
+`dart pub global activate --source git https://github.com/Justin42/dsbuild.git` \
+*Run command again to update*
+
+*Uninstalling from path:*\
+`dart pub global deactivate dsbuild`
+
+See [dart pub global](https://dart.dev/tools/pub/cmd/pub-globa) for more details.
+
+#### Build binary (native):
+
+`dart compile exe bin/dsbuild.dart`
