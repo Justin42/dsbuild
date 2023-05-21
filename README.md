@@ -48,11 +48,11 @@ report.**
 
 Building requires the Dart SDK, and can be executed or installed the same way as other Dart applications.
 
-#### Run from source (JIT) :
+#### Run from source (JIT):
 
 `dart run bin/dsbuild.dart dataset.yaml`
 
-#### Install to path from source (AOT) :
+#### Install to path from source (AOT):
 
 `dart pub global activate -s path ./`
 
