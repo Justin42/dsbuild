@@ -37,14 +37,14 @@ The responsibilities for each component of the pipeline are as follows:
 
 - **Writers**: Formats and outputs the final Conversation stream.
 
+### Building and installation
+
 This application should be compatible with Windows, Linux, and Mac. Including ARM64
 architectures.
 The library *may* also be compatible with Mobile and Web builds if seeking integration with Flutter.
 
 **Currently only Windows builds have been tested. If you experience an issue on other platforms please post an issue
 report.**
-
-### Building and installation
 
 Building requires the Dart SDK, and can be executed or installed the same way as other Dart applications.
 
