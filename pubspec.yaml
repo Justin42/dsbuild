@@ -1,6 +1,6 @@
 name: dsbuild
 description: Tool for preparing common dataset formats for LLM training.
-version: 1.0.0
+version: 0.1.0-alpha1
 repository: https://github.com/Justin42/dsbuild
 
 environment:
@@ -18,3 +18,6 @@ dependencies:
 dev_dependencies:
   lints: ^2.0.0
   test: ^1.21.0
+
+executables:
+  dsbuild:
