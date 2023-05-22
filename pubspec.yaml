@@ -11,7 +11,7 @@ dependencies:
   crypto: ^3.0.3
   csv: ^5.0.2
   html: ^0.15.3
-  http: ^0.13.6
+  http: ^1.0.0
   logging: ^1.1.1
   yaml: ^3.1.2
 
