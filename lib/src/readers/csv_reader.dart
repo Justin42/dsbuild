@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 
-import '../model/conversation.dart';
-import 'reader.dart';
+import '../conversation.dart';
+import '../reader.dart';
 
 class CsvReader extends Reader {
   const CsvReader(super.config);

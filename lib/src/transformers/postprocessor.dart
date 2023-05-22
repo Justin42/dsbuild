@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../model/conversation.dart';
+import '../conversation.dart';
 
 abstract class Postprocessor {
   String get description;

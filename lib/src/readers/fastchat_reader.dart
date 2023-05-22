@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import '../model/conversation.dart';
-import 'reader.dart';
+import '../conversation.dart';
+import '../reader.dart';
 
 class FastChatReader extends Reader {
   const FastChatReader(super.config);

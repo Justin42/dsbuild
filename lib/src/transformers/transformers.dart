@@ -1,14 +1,16 @@
+library dsbuild;
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dsbuild/transformer/postprocessor.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:logging/logging.dart';
 
-import '../model/conversation.dart';
+import '../conversation.dart';
+import 'postprocessor.dart';
 import 'preprocessor.dart';
 
 Logger _log = Logger("dsbuild/transformers");

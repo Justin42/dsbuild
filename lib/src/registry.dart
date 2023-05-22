@@ -1,7 +1,7 @@
-import 'reader/reader.dart';
-import 'transformer/postprocessor.dart';
-import 'transformer/preprocessor.dart';
-import 'writer/writer.dart';
+import 'reader.dart';
+import 'transformers/postprocessor.dart';
+import 'transformers/preprocessor.dart';
+import 'writer.dart';
 
 class Registry {
   final Map<String, Reader Function(Map)> readers;

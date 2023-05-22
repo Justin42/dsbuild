@@ -1,15 +1,9 @@
-// major beta (3.0.0) API usage.
-// ignore_for_file: sdk_version_since
-
 import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dsbuild/dsbuild.dart';
-import 'package:dsbuild/error.dart';
-import 'package:dsbuild/model/conversation.dart';
-import 'package:dsbuild/model/descriptor.dart';
-import 'package:dsbuild/progress/progress.dart';
+import 'package:dsbuild/progress.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 

@@ -2,9 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dsbuild/model/conversation.dart';
-
-import 'writer.dart';
+import '../conversation.dart';
+import '../writer.dart';
 
 class DsBuildWriter extends Writer {
   const DsBuildWriter(super.config);

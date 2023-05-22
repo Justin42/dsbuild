@@ -1,4 +1,4 @@
-import 'model/descriptor.dart';
+import 'descriptor.dart';
 
 /// Responsible for storing data during the build process.
 class Repository {

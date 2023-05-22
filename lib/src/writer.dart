@@ -1,4 +1,4 @@
-import '../model/conversation.dart';
+import 'conversation.dart';
 
 abstract class Writer {
   final Map config;

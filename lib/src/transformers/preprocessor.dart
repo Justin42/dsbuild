@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../model/conversation.dart';
+import '../../dsbuild.dart';
 
 abstract class Preprocessor {
   String get description;
