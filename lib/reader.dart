@@ -1,3 +1,5 @@
+/// Implement or interact with custom readers.
+/// Readers can be created to provide input from any source.
 library reader;
 
 export 'src/reader.dart' show Reader;

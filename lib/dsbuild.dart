@@ -1,3 +1,4 @@
+/// High-level interactions with the transformation pipeline and dataset descriptors.
 library dsbuild;
 
 export 'src/api.dart' show DsBuild;
