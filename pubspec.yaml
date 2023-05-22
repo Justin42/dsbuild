@@ -5,7 +5,7 @@ repository: https://github.com/Justin42/dsbuild
 topics: [ ai, nlp, lm ]
 
 environment:
-  sdk: '^3.0.0-417.4.beta'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   bloc: ^8.1.1
