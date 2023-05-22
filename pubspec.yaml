@@ -1,6 +1,6 @@
 name: dsbuild
 description: Dataset preparation for LM training.
-version: 0.1.0-alpha.2
+version: 0.1.0-alpha.3
 repository: https://github.com/Justin42/dsbuild
 topics: [ ai, nlp, lm ]
 
