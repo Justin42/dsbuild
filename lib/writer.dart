@@ -1,5 +1,5 @@
-/// Implement or interact with custom writers.
-/// Writers can be implemented to output data to any destination.
+/// Output the final conversation stream.
+/// See [Writer] for implementing custom writers.
 library writer;
 
 export 'src/writer.dart' show Writer;

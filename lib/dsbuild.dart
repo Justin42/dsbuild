@@ -1,4 +1,4 @@
-/// High-level interactions with the transformation pipeline and dataset descriptors.
+/// Primary high-level interface. See [DsBuild]
 library dsbuild;
 
 export 'src/api.dart' show DsBuild;

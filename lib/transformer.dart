@@ -1,5 +1,6 @@
-/// Implement or interact with custom preprocessors or postprocessors.
-/// These provide transformations for either a message or a complete conversation.
+/// Transformations for messages or conversations.
+/// For implementing message transformers see [Preprocessor]
+/// For implementing conversation transformers see [Postprocessor]
 library transformer;
 
 export 'src/transformers/postprocessor.dart' show Postprocessor;
