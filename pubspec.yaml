@@ -2,6 +2,7 @@ name: dsbuild
 description: Tool for preparing common dataset formats for LLM training.
 version: 0.1.0-alpha.2
 repository: https://github.com/Justin42/dsbuild
+topics: [ ai, nlp, lm ]
 
 environment:
   sdk: '^3.0.0-417.4.beta'
