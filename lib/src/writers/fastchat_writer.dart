@@ -2,8 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:logging/logging.dart';
+
 import '../conversation.dart';
 import '../writer.dart';
+
+Logger _log = Logger("dsbuild");
 
 class FastChatWriter extends Writer {
   int indent;
@@ -40,6 +44,7 @@ class FastChatWriter extends Writer {
       buffer.clear();
       ioSink.close();
       sink.close();
+      _log.info("Output finalized: $runtimeType $destination");
     }));
   }
 }

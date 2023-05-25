@@ -95,7 +95,7 @@ void main(List<String> args) async {
   log.info("Performing transformations...");
   await dsBuild.writeAll(conversations).last;
   dsBuild.progress.add(const BuildComplete());
-  log.info("Output finalized.");
+  log.info("All output finalized.");
 
   if (dsBuild.repository.descriptor.generateHashes ||
       dsBuild.repository.descriptor.verifyHashes) {
