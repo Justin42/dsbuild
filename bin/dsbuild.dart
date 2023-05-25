@@ -34,6 +34,7 @@ void main(List<String> args) async {
   DsBuild dsBuild = DsBuild(descriptor);
 
   // Progress output
+  DateTime startTime = DateTime.timestamp();
   DateTime lastProgressOutput = DateTime.timestamp();
   dsBuild.progress.stream.listen((state) {
     if (DateTime.timestamp().difference(lastProgressOutput).inSeconds > 5) {
@@ -105,13 +106,15 @@ void main(List<String> args) async {
       if (dsBuild.repository.descriptor.verifyHashes &&
           descriptor.hash != null &&
           descriptor.hash != hash) {
-        throw FileVerificationError(
-            descriptor.path, "", descriptor.hash!, hash);
+        log.severe(
+            FileVerificationError(descriptor.path, "", descriptor.hash!, hash));
+      } else {
+        log.info(
+            "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.path}\nsha512: $hash");
       }
-      log.info(
-          "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.path}\nsha512: $hash");
     }
   }
   await dsBuild.progress.close();
-  log.info("Done.");
+  Duration duration = DateTime.timestamp().difference(startTime);
+  log.info("Build completed in $duration");
 }
