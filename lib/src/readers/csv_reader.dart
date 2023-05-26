@@ -38,7 +38,8 @@ class CsvReader extends Reader {
         header = false;
       } else {
         sink.add(MessageEnvelope(
-            Message(data[fromCol], data[messageCol]), data[convoIdCol]));
+            Message(data[fromCol], data[messageCol].toString()),
+            data[convoIdCol]));
       }
     }));
   }
