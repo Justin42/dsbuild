@@ -8,6 +8,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  async: ^2.11.0
   bloc: ^8.1.1
   crypto: ^3.0.3
   csv: ^5.0.2
