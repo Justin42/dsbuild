@@ -13,7 +13,7 @@ void main(List<String> args) async {
   Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((record) {
     print(
-        '${record.time}/${record.level.name}/${record.loggerName}: ${record.message}');
+        '${record.time.toUtc()}/${record.level.name}/${record.loggerName}: ${record.message}');
   });
 
   String descriptorPath = args.isEmpty ? 'dataset.yaml' : args[0];

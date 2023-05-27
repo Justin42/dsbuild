@@ -189,6 +189,12 @@ class LocalWorker extends Worker {
   //void setupRegistry() {}
 
   static void start(HandshakeMessage handshake) async {
+    Logger.root.level = Level.FINE;
+    Logger.root.onRecord.listen((record) {
+      print(
+          '${record.time.toUtc()}/${record.level.name}/${record.loggerName}: ${record.message}');
+    });
+    final Logger log = Logger("dsbuild/LocalWorker");
     LocalWorker worker = LocalWorker(ReceivePort(), handshake.tx);
     handshake.tx.send(HandshakeMessage(worker.rx.sendPort));
     await worker.rx
