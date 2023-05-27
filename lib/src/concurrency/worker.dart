@@ -12,16 +12,51 @@ import 'tasks.dart';
 
 Logger _log = Logger("dsbuild/WorkerPool");
 
+class ExpandingTransformer<T> extends StreamTransformerBase<List<T>, T> {
+  const ExpandingTransformer();
+
+  @override
+  Stream<T> bind(Stream<List<T>> stream) async* {
+    StreamController<T> controller = StreamController(sync: true);
+    stream.listen((event) {
+      for (T element in event) {
+        controller.add(element);
+      }
+    }, onDone: () async {
+      controller.close();
+    });
+    yield* controller.stream;
+  }
+}
+
+/// Buffer and complete incoming Futures, then emit the results.
+/// Parallel count is equal to [length].
+/// Always waits for the next event in the sequence.
+class SynchronizingTransformer<T> extends StreamTransformerBase<Future<T>, T> {
+  final int length;
+
+  SynchronizingTransformer(this.length);
+
+  @override
+  Stream<T> bind(Stream<Future<T>> stream) async* {
+    await for (var next in stream.slices(length)) {
+      yield* Future.wait(next)
+          .asStream()
+          .expand((elements) => [for (var element in elements) element]);
+    }
+  }
+}
+
 class WorkerPool {
   final List<WorkerHandle> workers;
   final List<Isolate> localIsolates;
 
-  final int preprocessBuffer = 10000;
-  final int postprocessBuffer = 1000;
+  final int preBatchSize;
+  final int postBatchSize;
 
   int nextWorker = 0;
 
-  WorkerPool()
+  WorkerPool({this.preBatchSize = 10000, this.postBatchSize = 100})
       : workers = [],
         localIsolates = [];
 
@@ -39,106 +74,42 @@ class WorkerPool {
     return handle;
   }
 
+  /// Convenience function. See [startLocalWorker]
+  Future<List<WorkerHandle>> startLocalWorkers(int count) async {
+    return [for (int i = 0; i < count; i++) await startLocalWorker()];
+  }
+
+  Future<void> stopLocalWorkers() async {
+    await Future.wait<void>([for (var handle in workers) handle.close()]);
+    _log.finer("Workers shutdown.");
+  }
+
   Stream<MessageEnvelope> preprocess(
-      Stream<MessageEnvelope> data, List<StepDescriptor> steps) {
-    List<MessageEnvelope> pending = [];
-    List<Future<List<MessageEnvelope>>> incoming = [];
-    return data.transform(
-        StreamTransformer.fromHandlers(handleData: (data, sink) async {
-      if (pending.length <= preprocessBuffer) {
-        pending.add(data);
-      } else {
-        if (incoming.length < workers.length) {
-          incoming.add(
-              run(PreprocessTask(pending, steps)).then((WorkerResponse value) {
-            switch (value) {
-              case PreprocessResponse result:
-                return result.batch;
-              case PostprocessResponse _:
-                throw UnsupportedError(
-                    "Received postprocess response during preprocessing");
-            }
-          }));
-          pending = [];
-        } else {
-          for (Future<List<MessageEnvelope>> response in incoming) {
-            List<MessageEnvelope> next = await response;
-            for (MessageEnvelope msg in next) {
-              sink.add(msg);
-            }
-          }
-          incoming = [];
-        }
-      }
-    }, handleDone: (sink) async {
-      List<MessageEnvelope> remaining =
-          await run(PreprocessTask(pending, steps))
-              .then((WorkerResponse value) {
-        switch (value) {
-          case PreprocessResponse result:
-            return result.batch;
-          case PostprocessResponse _:
-            throw UnsupportedError(
-                "Received postprocess response during preprocessing");
-        }
-      });
-      for (MessageEnvelope response in remaining) {
-        sink.add(response);
-      }
-      pending = [];
-      incoming = [];
-      sink.close();
-    }));
+      Stream<MessageEnvelope> data, List<StepDescriptor> steps) async* {
+    yield* data
+        .slices(preBatchSize)
+        .map((data) => run(PreprocessTask(data, steps)).then((value) => switch (
+                value) {
+              PreprocessResponse result => result.batch,
+              _ => throw UnimplementedError()
+            }))
+        .transform(
+            SynchronizingTransformer<List<MessageEnvelope>>(workers.length))
+        .transform(ExpandingTransformer());
+    //.expand((Iterable<MessageEnvelope> events) => [for(var event in events) event]);
   }
 
   Stream<Conversation> postprocess(
-      Stream<Conversation> data, List<StepDescriptor> steps) {
-    List<Conversation> pending = [];
-    List<Future<List<Conversation>>> incoming = [];
-    return data.transform(
-        StreamTransformer.fromHandlers(handleData: (data, sink) async {
-      if (pending.length <= postprocessBuffer) {
-        pending.add(data);
-      } else {
-        if (incoming.length < workers.length) {
-          incoming.add(
-              run(PostprocessTask(pending, steps)).then((WorkerResponse value) {
+      Stream<Conversation> data, List<StepDescriptor> steps) async* {
+    yield* data
+        .slices(postBatchSize)
+        .map((data) => run(PostprocessTask(data, steps)).then((value) =>
             switch (value) {
-              case PreprocessResponse _:
-                throw UnsupportedError(
-                    "Received preprocess response during postprocessing");
-              case PostprocessResponse result:
-                return result.batch;
-            }
-          }));
-          pending = [];
-        } else {
-          for (Future<List<Conversation>> response in incoming) {
-            for (Conversation next in await response) {
-              sink.add(next);
-            }
-          }
-          incoming = [];
-        }
-      }
-    }, handleDone: (sink) async {
-      List<Conversation> remaining = await run(PostprocessTask(pending, steps))
-          .then((WorkerResponse value) {
-        switch (value) {
-          case PreprocessResponse _:
-            throw UnsupportedError(
-                "Received postprocess response during preprocessing");
-          case PostprocessResponse result:
-            return result.batch;
-        }
-      });
-      for (Conversation response in remaining) {
-        sink.add(response);
-      }
-      pending = [];
-      incoming = [];
-      sink.close();
-    }));
+              PostprocessResponse result => result.batch,
+              _ => throw UnimplementedError()
+            }))
+        .transform(SynchronizingTransformer<List<Conversation>>(workers.length))
+        .transform(ExpandingTransformer());
   }
 
   Future<WorkerResponse> run(WorkerMessage msg) {
@@ -159,6 +130,10 @@ class WorkerHandle {
   const WorkerHandle(this.rx, this.tx);
 
   void send(WorkerMessage msg) => tx.send(msg);
+
+  Future<void> close() async {
+    await rx.cancel();
+  }
 }
 
 abstract class Worker {
@@ -207,12 +182,12 @@ class LocalWorker extends Worker {
     LocalWorker worker = LocalWorker(ReceivePort(), handshake.tx);
     log.info("Worker started.");
     handshake.tx.send(HandshakeMessage(worker.rx.sendPort));
-    await worker.rx
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+    await worker.rx.transform(
+        StreamTransformer.fromHandlers(handleData: (data, sink) async {
       //WorkerMessage message = data as WorkerMessage;
 
-      log.info("Received task");
-      data.run(worker);
+      //log.info("Received task");
+      worker.send(await data.run(worker));
       sink.add(data);
     })).last;
     log.info("Worker shutting down");
