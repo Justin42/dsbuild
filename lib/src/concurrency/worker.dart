@@ -5,7 +5,6 @@ import 'package:async/async.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:logging/logging.dart';
 
-import '../conversation.dart';
 import '../descriptor.dart';
 import '../registry.dart';
 import 'message.dart';
@@ -17,20 +16,19 @@ class WorkerPool {
   final List<WorkerHandle> workers;
   final List<Isolate> localIsolates;
 
-  final int preprocessBuffer = 100;
-  final int postprocessBuffer = 10;
+  final int preprocessBuffer = 10000;
+  final int postprocessBuffer = 1000;
 
   int nextWorker = 0;
 
   WorkerPool()
-      : workers = const [],
-        localIsolates = const [];
+      : workers = [],
+        localIsolates = [];
 
   Future<WorkerHandle> startLocalWorker() async {
-    _log.info("Starting local worker ${workers.length}...");
+    _log.info("Starting local worker ${workers.length + 1}...");
     ReceivePort port = ReceivePort();
-    StreamQueue<WorkerResponse> rx =
-        StreamQueue(port) as StreamQueue<WorkerResponse>;
+    StreamQueue rx = StreamQueue(port);
     Isolate workerIsolate =
         await Isolate.spawn(LocalWorker.start, HandshakeMessage(port.sendPort));
     HandshakeMessage handshake = await rx.next as HandshakeMessage;
@@ -61,12 +59,15 @@ class WorkerPool {
                     "Received postprocess response during preprocessing");
             }
           }));
+          pending = [];
         } else {
           for (Future<List<MessageEnvelope>> response in incoming) {
-            for (MessageEnvelope next in await response) {
-              sink.add(next);
+            List<MessageEnvelope> next = await response;
+            for (MessageEnvelope msg in next) {
+              sink.add(msg);
             }
           }
+          incoming = [];
         }
       }
     }, handleDone: (sink) async {
@@ -84,6 +85,8 @@ class WorkerPool {
       for (MessageEnvelope response in remaining) {
         sink.add(response);
       }
+      pending = [];
+      incoming = [];
       sink.close();
     }));
   }
@@ -94,7 +97,7 @@ class WorkerPool {
     List<Future<List<Conversation>>> incoming = [];
     return data.transform(
         StreamTransformer.fromHandlers(handleData: (data, sink) async {
-      if (pending.length <= preprocessBuffer) {
+      if (pending.length <= postprocessBuffer) {
         pending.add(data);
       } else {
         if (incoming.length < workers.length) {
@@ -108,12 +111,14 @@ class WorkerPool {
                 return result.batch;
             }
           }));
+          pending = [];
         } else {
           for (Future<List<Conversation>> response in incoming) {
             for (Conversation next in await response) {
               sink.add(next);
             }
           }
+          incoming = [];
         }
       }
     }, handleDone: (sink) async {
@@ -130,6 +135,8 @@ class WorkerPool {
       for (Conversation response in remaining) {
         sink.add(response);
       }
+      pending = [];
+      incoming = [];
       sink.close();
     }));
   }
@@ -139,18 +146,19 @@ class WorkerPool {
       nextWorker = 0;
     }
     WorkerHandle worker = workers[nextWorker];
-    worker.send(msg as Message);
-    return worker.rx.next;
+    worker.send(msg);
+    nextWorker += 1;
+    return worker.rx.next.then((value) => value as WorkerResponse);
   }
 }
 
 class WorkerHandle {
-  final StreamQueue<WorkerResponse> rx;
+  final StreamQueue<dynamic> rx;
   final SendPort tx;
 
   const WorkerHandle(this.rx, this.tx);
 
-  void send(Message msg) => tx.send(msg);
+  void send(WorkerMessage msg) => tx.send(msg);
 }
 
 abstract class Worker {
@@ -195,10 +203,18 @@ class LocalWorker extends Worker {
           '${record.time.toUtc()}/${record.level.name}/${record.loggerName}: ${record.message}');
     });
     final Logger log = Logger("dsbuild/LocalWorker");
+
     LocalWorker worker = LocalWorker(ReceivePort(), handshake.tx);
+    log.info("Worker started.");
     handshake.tx.send(HandshakeMessage(worker.rx.sendPort));
     await worker.rx
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {}))
-        .last;
+        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
+      //WorkerMessage message = data as WorkerMessage;
+
+      log.info("Received task");
+      data.run(worker);
+      sink.add(data);
+    })).last;
+    log.info("Worker shutting down");
   }
 }
