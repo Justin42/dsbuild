@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/src/concurrency/worker.dart';
 import 'package:logging/logging.dart';
 
 import '../reader.dart';
@@ -20,6 +21,7 @@ class DsBuild {
   final Repository repository;
   final Registry registry;
   final ProgressBloc progress;
+  final WorkerPool workerPool;
 
   static Logger log = Logger("dsbuild");
 
@@ -55,7 +57,9 @@ class DsBuild {
   };
 
   DsBuild(DatasetDescriptor descriptor,
-      {Registry? registry, this.config = const Config()})
+      {Registry? registry,
+      this.config = const Config(),
+      WorkerPool? workerPool})
       : repository = Repository(descriptor),
         registry = registry ??
             Registry(builtinReaders, builtinWriters,
@@ -63,7 +67,8 @@ class DsBuild {
                 postprocessors: builtinPostprocessors),
         progress = ProgressBloc(ProgressState(
             totalInputFiles: descriptor.inputs.length,
-            totalOutputFiles: descriptor.outputs.length));
+            totalOutputFiles: descriptor.outputs.length)),
+        workerPool = workerPool ?? WorkerPool();
 
   /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
@@ -144,9 +149,14 @@ class DsBuild {
       progress.add(const MessageRead());
       sink.add(data);
     }));
-    for (StepDescriptor step in steps) {
-      pipeline = pipeline.transform(
-          registry.preprocessors[step.type]!.call(step.config).transformer);
+
+    if (workerPool.workers.isNotEmpty) {
+      pipeline = workerPool.preprocess(pipeline, steps);
+    } else {
+      for (StepDescriptor step in steps) {
+        pipeline = pipeline.transform(
+            registry.preprocessors[step.type]!.call(step.config).transformer);
+      }
     }
 
     // Progress tracking
@@ -163,9 +173,13 @@ class DsBuild {
   Stream<Conversation> postProcess(
       Stream<Conversation> conversations, OutputDescriptor output) {
     Stream<Conversation> pipeline = conversations;
-    for (StepDescriptor step in output.steps) {
-      pipeline = pipeline.transform(
-          registry.postprocessors[step.type]!.call(step.config).transformer);
+    if (workerPool.workers.isNotEmpty) {
+      pipeline = workerPool.postprocess(pipeline, output.steps);
+    } else {
+      for (StepDescriptor step in output.steps) {
+        pipeline = pipeline.transform(
+            registry.postprocessors[step.type]!.call(step.config).transformer);
+      }
     }
     return pipeline
         .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
@@ -212,7 +226,6 @@ class DsBuild {
 
   /// Transform each input according to it's InputDescriptor.
   /// The transformation output is concatenated, in the order of input, into a single Conversation stream
-  /// The stream
   Stream<Conversation> transformAll() async* {
     List<Stream<MessageEnvelope>> pending = [];
     for (InputDescriptor inputDescriptor in repository.descriptor.inputs) {
