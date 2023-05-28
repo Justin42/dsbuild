@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/progress.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
@@ -29,6 +30,21 @@ void main(List<String> args) async {
     log.severe("No descriptor found at $descriptorPath: ${ex.message}");
     exit(1);
   }
+
+  int deletedFiles = 0;
+  for (String dir in descriptor.cleanDirectory) {
+    if (dir.contains("../") || dir.contains(r"..\")) {
+      throw Exception("Clean directory escapes working directory");
+    }
+    Directory directory =
+        Directory(p.relative(dir, from: Directory.current.path));
+    log.info("Cleaning build directory '${p.relative(directory.path)}'");
+    await directory.list().forEach((element) {
+      element.delete(recursive: true);
+      deletedFiles++;
+    });
+  }
+  log.info("Removed $deletedFiles files");
 
   // Initialize DsBuild
   DsBuild dsBuild = DsBuild(descriptor);

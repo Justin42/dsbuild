@@ -9,6 +9,7 @@ class DatasetDescriptor {
   final int messageBatch;
   final int conversationBatch;
   final int? threads;
+  final List<String> cleanDirectory;
   final List<InputDescriptor> inputs;
   final List<OutputDescriptor> outputs;
 
@@ -30,6 +31,7 @@ class DatasetDescriptor {
       this.messageBatch = 5000,
       this.conversationBatch = 100,
       this.threads,
+      this.cleanDirectory = const [],
       this.inputs = const [],
       this.outputs = const []});
 
@@ -42,6 +44,9 @@ class DatasetDescriptor {
         messageBatch = data['build']?['messageBatch'] ?? 5000,
         conversationBatch = data['build']?['conversationBatch'] ?? 100,
         threads = data['build']?['threads'],
+        cleanDirectory = [
+          for (var dir in data['build']?['cleanDirectory']) dir.toString()
+        ],
         inputs = [
           for (var input in data['input']) InputDescriptor.fromYaml(input)
         ],
