@@ -61,7 +61,6 @@ class WorkerPool {
         localIsolates = [];
 
   Future<WorkerHandle> startLocalWorker() async {
-    _log.info("Starting local worker ${workers.length + 1}...");
     ReceivePort port = ReceivePort();
     StreamQueue rx = StreamQueue(port);
     Isolate workerIsolate =
@@ -70,7 +69,7 @@ class WorkerPool {
     WorkerHandle handle = WorkerHandle(rx, handshake.tx);
     workers.add(handle);
     localIsolates.add(workerIsolate);
-    _log.info("Worker ${workers.length} handshake completed.");
+    _log.finer("Worker ${workers.length} handshake.");
     return handle;
   }
 
@@ -96,7 +95,6 @@ class WorkerPool {
         .transform(
             SynchronizingTransformer<List<MessageEnvelope>>(workers.length))
         .transform(ExpandingTransformer());
-    //.expand((Iterable<MessageEnvelope> events) => [for(var event in events) event]);
   }
 
   Stream<Conversation> postprocess(
@@ -172,7 +170,7 @@ class LocalWorker extends Worker {
   //void setupRegistry() {}
 
   static void start(HandshakeMessage handshake) async {
-    Logger.root.level = Level.FINE;
+    Logger.root.level = Level.INFO;
     Logger.root.onRecord.listen((record) {
       print(
           '${record.time.toUtc()}/${record.level.name}/${record.loggerName}: ${record.message}');
@@ -180,7 +178,7 @@ class LocalWorker extends Worker {
     final Logger log = Logger("dsbuild/LocalWorker");
 
     LocalWorker worker = LocalWorker(ReceivePort(), handshake.tx);
-    log.info("Worker started.");
+    log.finer("Worker started.");
     handshake.tx.send(HandshakeMessage(worker.rx.sendPort));
     await worker.rx.transform(
         StreamTransformer.fromHandlers(handleData: (data, sink) async {
@@ -190,6 +188,6 @@ class LocalWorker extends Worker {
       worker.send(await data.run(worker));
       sink.add(data);
     })).last;
-    log.info("Worker shutting down");
+    log.finer("Worker shutting down");
   }
 }

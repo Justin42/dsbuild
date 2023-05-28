@@ -54,7 +54,7 @@ class HtmlStrip extends Preprocessor {
 
         sink.add(data.copyWithValue(fragment.text ?? ""));
       }, handleDone: (sink) {
-        _log.fine("$runtimeType stripped $strippedAnchors anchor texts.");
+        _log.finer("$runtimeType stripped $strippedAnchors anchor texts.");
         sink.close();
       });
 }
@@ -389,7 +389,8 @@ class Participants extends Postprocessor {
           _skipped += 1;
         }
       }, handleDone: (sink) {
-        _log.fine("${runtimeType.toString()} dropped $_skipped conversations.");
+        _log.finer(
+            "${runtimeType.toString()} dropped $_skipped conversations.");
         sink.close();
       });
 }

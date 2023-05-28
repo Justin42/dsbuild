@@ -32,6 +32,7 @@ void main(List<String> args) async {
 
   // Initialize DsBuild
   DsBuild dsBuild = DsBuild(descriptor);
+  log.info("${dsBuild.workerPool.workers.length} active workers.");
 
   // Progress output
   DateTime startTime = DateTime.timestamp();
