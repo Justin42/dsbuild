@@ -32,6 +32,8 @@ void main(List<String> args) async {
 
   // Initialize DsBuild
   DsBuild dsBuild = DsBuild(descriptor);
+  await dsBuild.workerPool
+      .startLocalWorkers(descriptor.threads ?? Platform.numberOfProcessors);
   log.info("${dsBuild.workerPool.workers.length} active workers.");
 
   // Progress output
@@ -95,6 +97,7 @@ void main(List<String> args) async {
 
   log.info("Performing transformations...");
   await dsBuild.writeAll(conversations).last;
+  dsBuild.workerPool.stopLocalWorkers();
   dsBuild.progress.add(const BuildComplete());
   log.info("All output finalized.");
 
