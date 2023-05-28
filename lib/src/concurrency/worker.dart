@@ -51,12 +51,12 @@ class WorkerPool {
   final List<WorkerHandle> workers;
   final List<Isolate> localIsolates;
 
-  final int preBatchSize;
-  final int postBatchSize;
+  final int messageBatch;
+  final int conversationBatch;
 
   int nextWorker = 0;
 
-  WorkerPool({this.preBatchSize = 10000, this.postBatchSize = 100})
+  WorkerPool({this.messageBatch = 100, this.conversationBatch = 1})
       : workers = [],
         localIsolates = [];
 
@@ -86,7 +86,7 @@ class WorkerPool {
   Stream<MessageEnvelope> preprocess(
       Stream<MessageEnvelope> data, List<StepDescriptor> steps) async* {
     yield* data
-        .slices(preBatchSize)
+        .slices(messageBatch)
         .map((data) => run(PreprocessTask(data, steps)).then((value) => switch (
                 value) {
               PreprocessResponse result => result.batch,
@@ -100,7 +100,7 @@ class WorkerPool {
   Stream<Conversation> postprocess(
       Stream<Conversation> data, List<StepDescriptor> steps) async* {
     yield* data
-        .slices(postBatchSize)
+        .slices(conversationBatch)
         .map((data) => run(PostprocessTask(data, steps)).then((value) =>
             switch (value) {
               PostprocessResponse result => result.batch,
