@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
@@ -145,8 +146,9 @@ class RegexExtract extends Preprocessor {
                 unicode: config['unicode'] ?? false,
                 dotAll: config['dotAll'] ?? false)
         ],
-        file = File(config['path']),
-        //TODO: buffer = config['buffer'] ?? false,
+        file = File(config['path']
+            .toString()
+            .replaceAll("%worker%", Isolate.current.debugName ?? '0')),
         escape = config['escape'];
 
   @override
@@ -161,7 +163,9 @@ class RegexExtract extends Preprocessor {
         // ...
         // \n
         ioSink ??= file.openWrite(
-            mode: config['overwrite'] ? FileMode.writeOnly : FileMode.append);
+            mode: (config['overwrite'] ?? false)
+                ? FileMode.writeOnly
+                : FileMode.append);
         bool matches = false;
         for (RegExp pattern in regex) {
           data.value.replaceAllMapped(pattern, (match) {
