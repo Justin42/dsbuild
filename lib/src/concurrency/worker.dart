@@ -87,11 +87,11 @@ class WorkerPool {
       Stream<MessageEnvelope> data, List<StepDescriptor> steps) async* {
     yield* data
         .slices(messageBatch)
-        .map((data) => run(PreprocessTask(data, steps)).then((value) => switch (
-                value) {
-              PreprocessResponse result => result.batch,
-              _ => throw UnimplementedError()
-            }))
+        .map((data) =>
+            run(PreprocessTask(data, steps)).then((value) => switch (value) {
+                  PreprocessResponse result => result.batch,
+                  var e => throw UnimplementedError(e.toString())
+                }))
         .transform(
             SynchronizingTransformer<List<MessageEnvelope>>(workers.length))
         .transform(ExpandingTransformer());
@@ -101,11 +101,11 @@ class WorkerPool {
       Stream<Conversation> data, List<StepDescriptor> steps) async* {
     yield* data
         .slices(conversationBatch)
-        .map((data) => run(PostprocessTask(data, steps)).then((value) =>
-            switch (value) {
-              PostprocessResponse result => result.batch,
-              _ => throw UnimplementedError()
-            }))
+        .map((data) =>
+            run(PostprocessTask(data, steps)).then((value) => switch (value) {
+                  PostprocessResponse result => result.batch,
+                  var e => throw UnimplementedError(e.toString())
+                }))
         .transform(SynchronizingTransformer<List<Conversation>>(workers.length))
         .transform(ExpandingTransformer());
   }
