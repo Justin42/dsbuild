@@ -63,8 +63,9 @@ class WorkerPool {
   Future<WorkerHandle> startLocalWorker() async {
     ReceivePort port = ReceivePort();
     StreamQueue rx = StreamQueue(port);
-    Isolate workerIsolate =
-        await Isolate.spawn(LocalWorker.start, HandshakeMessage(port.sendPort));
+    Isolate workerIsolate = await Isolate.spawn(
+        LocalWorker.start, HandshakeMessage(port.sendPort),
+        debugName: "${workers.length}");
     HandshakeMessage handshake = await rx.next as HandshakeMessage;
     WorkerHandle handle = WorkerHandle(rx, handshake.tx);
     workers.add(handle);
