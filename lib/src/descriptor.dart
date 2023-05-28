@@ -6,6 +6,9 @@ class DatasetDescriptor {
   final bool generateReadme;
   final bool generateHashes;
   final bool verifyHashes;
+  final int messageBatch;
+  final int conversationBatch;
+  final int? threads;
   final List<InputDescriptor> inputs;
   final List<OutputDescriptor> outputs;
 
@@ -24,6 +27,9 @@ class DatasetDescriptor {
       this.generateReadme = true,
       this.generateHashes = true,
       this.verifyHashes = true,
+      this.messageBatch = 5000,
+      this.conversationBatch = 100,
+      this.threads,
       this.inputs = const [],
       this.outputs = const []});
 
@@ -33,6 +39,9 @@ class DatasetDescriptor {
         generateReadme = data['build']?['generateReadme'] ?? false,
         generateHashes = data['build']?['generateHashes'] ?? true,
         verifyHashes = data['build']?['verifyHashes'] ?? true,
+        messageBatch = data['build']?['messageBatch'] ?? 5000,
+        conversationBatch = data['build']?['conversationBatch'] ?? 100,
+        threads = data['build']?['threads'],
         inputs = [
           for (var input in data['input']) InputDescriptor.fromYaml(input)
         ],

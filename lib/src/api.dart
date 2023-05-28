@@ -68,7 +68,10 @@ class DsBuild {
         progress = ProgressBloc(ProgressState(
             totalInputFiles: descriptor.inputs.length,
             totalOutputFiles: descriptor.outputs.length)),
-        workerPool = workerPool ?? WorkerPool();
+        workerPool = workerPool ??
+            WorkerPool(
+                messageBatch: descriptor.messageBatch,
+                conversationBatch: descriptor.conversationBatch);
 
   /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
