@@ -63,7 +63,7 @@ class ReaderDescriptor {
 
   ReaderDescriptor.fromYaml(YamlMap data)
       : type = data['type'],
-        config = data['config'];
+        config = data['config'] ?? {};
 }
 
 class WriterDescriptor {
@@ -74,7 +74,7 @@ class WriterDescriptor {
 
   WriterDescriptor.fromYaml(YamlMap data)
       : type = data['type'],
-        config = data['config'];
+        config = data['config'] ?? {};
 }
 
 class InputDescriptor {
