@@ -163,14 +163,6 @@ class DsBuild {
             registry.preprocessors[step.type]!.call(step.config).transformer);
       }
     }
-
-    // Progress tracking
-    pipeline = pipeline
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
-      progress.add(const MessageProcessed());
-      sink.add(data);
-    }));
-
     return pipeline;
   }
 
@@ -189,6 +181,7 @@ class DsBuild {
     return pipeline
         .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
       progress.add(const ConversationProcessed());
+      progress.add(MessageProcessed(count: data.messages.length));
       sink.add(data);
     }));
   }

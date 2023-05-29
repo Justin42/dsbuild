@@ -63,17 +63,18 @@ class ProgressState {
 class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
   ProgressBloc(super.initialState) {
     on<MessageRead>((event, emit) {
-      emit(state.copyWith(messagesTotal: state.messagesTotal + 1));
+      emit(state.copyWith(messagesTotal: state.messagesTotal + event.count));
     });
     on<MessageProcessed>((event, emit) {
-      emit(state.copyWith(messagesProcessed: state.messagesProcessed + 1));
+      emit(state.copyWith(
+          messagesProcessed: state.messagesProcessed + event.count));
     });
     on<ConversationRead>((event, emit) {
       emit(state.copyWith(conversationsTotal: state.conversationsTotal + 1));
     });
     on<ConversationProcessed>((event, emit) {
       emit(state.copyWith(
-          conversationsProcessed: state.conversationsProcessed + 1));
+          conversationsProcessed: state.conversationsProcessed + event.count));
     });
     on<InputFileProcessed>((event, emit) {
       emit(state.copyWith(
@@ -92,11 +93,15 @@ sealed class ProgressEvent {
 }
 
 class MessageRead extends ProgressEvent {
-  const MessageRead();
+  final int count;
+
+  const MessageRead({this.count = 1});
 }
 
 class MessageProcessed extends ProgressEvent {
-  const MessageProcessed();
+  final int count;
+
+  const MessageProcessed({this.count = 1});
 }
 
 class ConversationRead extends ProgressEvent {
@@ -104,7 +109,9 @@ class ConversationRead extends ProgressEvent {
 }
 
 class ConversationProcessed extends ProgressEvent {
-  const ConversationProcessed();
+  final int count;
+
+  const ConversationProcessed({this.count = 1});
 }
 
 class InputFileProcessed extends ProgressEvent {
