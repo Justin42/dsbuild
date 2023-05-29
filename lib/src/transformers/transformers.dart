@@ -209,18 +209,18 @@ class ExactReplace extends Preprocessor {
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         String lastText = data.value;
-        List<bool> hasMatches = List.filled(replacements.length, false);
+        bool hasMatches = false;
         do {
+          hasMatches = false;
           for (int i = 0; i < replacements.length; i++) {
-            hasMatches[i] = false;
             String text =
                 lastText.replaceAll(replacements[i][0], replacements[i][1]);
             if (text != lastText) {
               lastText = text;
-              hasMatches[i] = true;
+              hasMatches = true;
             }
           }
-        } while (hasMatches.contains(true) && recursive);
+        } while (hasMatches && recursive);
         sink.add(data.copyWithValue(lastText));
       });
 }
@@ -243,18 +243,18 @@ class ExactReplacePost extends Postprocessor {
             List.filled(data.messages.length, Message.empty());
         for (int i = 0; i < data.messages.length; i++) {
           String lastText = data.messages[i].value;
-          List<bool> hasMatches = List.filled(replacements.length, false);
+          bool hasMatches = false;
           do {
+            hasMatches = false;
             for (int i = 0; i < replacements.length; i++) {
-              hasMatches[i] = false;
               String text =
                   lastText.replaceAll(replacements[i][0], replacements[i][1]);
               if (text != lastText) {
                 lastText = text;
-                hasMatches[i] = true;
+                hasMatches = true;
               }
             }
-          } while (hasMatches.contains(true) && recursive);
+          } while (hasMatches && recursive);
           messages[i] = data.messages[i].copyWith(value: lastText);
         }
         sink.add(data.copyWith(messages: messages));
@@ -285,14 +285,13 @@ class FullMatch extends Preprocessor {
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         bool skip = false;
+        String compareValue =
+            caseSensitive ? data.value : data.value.toLowerCase();
         for (String pattern in patterns) {
+          pattern = caseSensitive ? pattern : pattern.toLowerCase();
           switch (action) {
             case FullMatchAction.drop:
-              if (!caseSensitive &&
-                  (data.value.toLowerCase() == pattern.toLowerCase())) {
-                skip = true;
-                break;
-              } else if (data.value == pattern) {
+              if (compareValue == pattern) {
                 skip = true;
                 break;
               }
@@ -326,18 +325,17 @@ class FullMatchPost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        List<Message> messages = [];
+        List<Message?> messages = List.filled(data.messages.length, null);
         for (int i = 0; i < data.messages.length; i++) {
           bool skip = false;
+          String compareValue = caseSensitive
+              ? data.messages[i].value
+              : data.messages[i].value.toLowerCase();
           for (String pattern in patterns) {
+            pattern = caseSensitive ? pattern : pattern.toLowerCase();
             switch (action) {
               case FullMatchAction.drop:
-                if (!caseSensitive &&
-                    (data.messages[i].value.toLowerCase() ==
-                        pattern.toLowerCase())) {
-                  skip = true;
-                  break;
-                } else if (data.messages[i].value == pattern) {
+                if (compareValue == pattern) {
                   skip = true;
                   break;
                 }
@@ -345,10 +343,11 @@ class FullMatchPost extends Postprocessor {
             if (skip) break;
           }
           if (!skip) {
-            messages.add(data.messages[i]);
+            messages[i] = data.messages[i];
           }
         }
-        sink.add(data.copyWith(messages: messages));
+        sink.add(
+            data.copyWith(messages: messages.nonNulls.toList(growable: false)));
       });
 }
 
@@ -412,17 +411,19 @@ class RenameParticipants extends Postprocessor {
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         Map<String, String> renameMap = {};
-        List<Message> messages = [];
-        for (final Message message in data.messages) {
+        List<Message> messages =
+            List.filled(data.messages.length, Message.empty());
+        for (int i = 0; i < data.messages.length; i++) {
+          Message message = data.messages[i];
           if (!renameMap.containsKey(message.from)) {
             if (renameMap.length < names.length) {
-              messages.add(message.copyWith(from: names[renameMap.length]));
+              messages[i] = message.copyWith(from: names[renameMap.length]);
               renameMap[message.from] = names[renameMap.length];
             } else {
-              messages.add(message);
+              messages[i] = message;
             }
           } else {
-            messages.add(message.copyWith(from: renameMap[message.from]));
+            messages[i] = message.copyWith(from: renameMap[message.from]);
           }
         }
         sink.add(data.copyWith(messages: messages));
@@ -437,13 +438,12 @@ class EncodingPre extends Preprocessor {
   EncodingPre(super.config)
       : invalidChar = config['invalid'] ?? r'�',
         codecName = config['codec'] {
-    if (codecName == 'us-ascii') {
-      codec = AsciiCodec(allowInvalid: true);
-    } else if (codecName == 'utf-8') {
-      codec = Utf8Codec(allowMalformed: true);
-    } else if (codecName == 'iso-8859-1') {
-      codec = Latin1Codec(allowInvalid: true);
-    }
+    codec = switch (codecName) {
+      'us-ascii' => AsciiCodec(allowInvalid: true),
+      'utf-8' => Utf8Codec(allowMalformed: true),
+      'iso-8859-1' => Latin1Codec(allowInvalid: true),
+      _ => null
+    };
   }
 
   @override
@@ -466,13 +466,12 @@ class EncodingPost extends Postprocessor {
   EncodingPost(super.config)
       : invalidChar = config['invalid'] ?? r'�',
         codecName = config['codec'] {
-    if (codecName == 'us-ascii') {
-      codec = AsciiCodec(allowInvalid: true);
-    } else if (codecName == 'utf-8') {
-      codec = Utf8Codec(allowMalformed: true);
-    } else if (codecName == 'iso-8859-1') {
-      codec = Latin1Codec(allowInvalid: true);
-    }
+    codec = switch (codecName) {
+      'us-ascii' => AsciiCodec(allowInvalid: true),
+      'utf-8' => Utf8Codec(allowMalformed: true),
+      'iso-8859-1' => Latin1Codec(allowInvalid: true),
+      _ => null
+    };
   }
 
   @override
