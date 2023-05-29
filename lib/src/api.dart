@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dsbuild/src/concurrency/worker.dart';
+import 'package:dsbuild/src/writers/message_writer.dart';
 import 'package:logging/logging.dart';
 
 import '../reader.dart';
@@ -53,6 +54,7 @@ class DsBuild {
 
   static final Map<String, Writer Function(Map)> builtinWriters = {
     'fastchat': (config) => FastChatWriter(config),
+    'RawMessage': (config) => RawMessageWriter(config),
     'dsbuild': (config) => DsBuildWriter(config),
   };
 
