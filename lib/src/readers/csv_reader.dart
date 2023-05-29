@@ -17,7 +17,7 @@ class CsvReader extends Reader {
     int messageCol = 0;
     bool header = true;
 
-    yield* Utf8Decoder()
+    yield* utf8.decoder
         .bind(File(source).openRead())
         .transform(CsvToListConverter())
         .transform(StreamTransformer.fromHandlers(
