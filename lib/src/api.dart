@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dsbuild/src/concurrency/worker.dart';
 import 'package:dsbuild/src/writers/message_writer.dart';
 import 'package:logging/logging.dart';
 
+import '../concurrency.dart';
 import '../reader.dart';
 import '../transformer.dart' as t;
 import '../writer.dart';
