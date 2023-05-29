@@ -239,8 +239,6 @@ class ExactReplacePost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        List<Message> messages =
-            List.filled(data.messages.length, Message.empty());
         for (int i = 0; i < data.messages.length; i++) {
           String lastText = data.messages[i].value;
           bool hasMatches = false;
@@ -255,9 +253,11 @@ class ExactReplacePost extends Postprocessor {
               }
             }
           } while (hasMatches && recursive);
-          messages[i] = data.messages[i].copyWith(value: lastText);
+          if (lastText != data.messages[i].value) {
+            data.messages[i] = data.messages[i].copyWith(value: lastText);
+          }
         }
-        sink.add(data.copyWith(messages: messages));
+        sink.add(data);
       });
 }
 
