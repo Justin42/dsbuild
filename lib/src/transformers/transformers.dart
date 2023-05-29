@@ -482,12 +482,13 @@ class EncodingPost extends Postprocessor {
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         sink.add(data.copyWith(
-            messages: data.messages
-                .map<Message>((message) => message.copyWith(
-                    value: codec!
-                        .decode(message.value.codeUnits)
-                        .replaceAll(r'�', invalidChar)))
-                .toList(growable: false)));
+            messages: data.messages.map<Message>((message) {
+          String result = codec!.decode(message.value.codeUnits);
+          result = result.contains(r'�')
+              ? result.replaceAll(r'�', invalidChar)
+              : result;
+          return message.copyWith(value: result);
+        }).toList(growable: false)));
       });
 }
 
