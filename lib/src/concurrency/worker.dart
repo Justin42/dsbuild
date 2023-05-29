@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:isolate';
 
 import 'package:async/async.dart';
@@ -12,13 +13,37 @@ import 'tasks.dart';
 
 Logger _log = Logger("dsbuild/WorkerPool");
 
+class BufferingTransformer<T> extends StreamTransformerBase<T, List<T>> {
+  final ListQueue<T> buffer;
+  final int length;
+
+  BufferingTransformer(this.length) : buffer = ListQueue(length);
+
+  @override
+  Stream<List<T>> bind(Stream<T> stream) async* {
+    StreamController<List<T>> controller = StreamController(sync: true);
+    stream.listen((event) {
+      if (buffer.length >= length) {
+        controller.add(buffer.toList(growable: false));
+        buffer.clear();
+      }
+      buffer.add(event);
+    }, onDone: () {
+      controller.add(buffer.toList(growable: false));
+      buffer.clear();
+      controller.close();
+    });
+    yield* controller.stream;
+  }
+}
+
 class ExpandingTransformer<T> extends StreamTransformerBase<List<T>, T> {
   const ExpandingTransformer();
 
   @override
   Stream<T> bind(Stream<List<T>> stream) async* {
     StreamController<T> controller = StreamController(sync: true);
-    stream.listen((event) {
+    stream.listen((List<T> event) {
       for (T element in event) {
         controller.add(element);
       }
@@ -40,9 +65,7 @@ class SynchronizingTransformer<T> extends StreamTransformerBase<Future<T>, T> {
   @override
   Stream<T> bind(Stream<Future<T>> stream) async* {
     await for (var next in stream.slices(length)) {
-      yield* Future.wait(next)
-          .asStream()
-          .expand((elements) => [for (var element in elements) element]);
+      yield* Future.wait(next).asStream().transform(ExpandingTransformer<T>());
     }
   }
 }
@@ -87,7 +110,7 @@ class WorkerPool {
   Stream<MessageEnvelope> preprocess(
       Stream<MessageEnvelope> data, List<StepDescriptor> steps) async* {
     yield* data
-        .slices(messageBatch)
+        .transform(BufferingTransformer<MessageEnvelope>(messageBatch))
         .map((data) =>
             run(PreprocessTask(data, steps)).then((value) => switch (value) {
                   PreprocessResponse result => result.batch,
@@ -95,20 +118,20 @@ class WorkerPool {
                 }))
         .transform(
             SynchronizingTransformer<List<MessageEnvelope>>(workers.length))
-        .transform(ExpandingTransformer());
+        .transform(const ExpandingTransformer());
   }
 
   Stream<Conversation> postprocess(
       Stream<Conversation> data, List<StepDescriptor> steps) async* {
     yield* data
-        .slices(conversationBatch)
+        .transform(BufferingTransformer<Conversation>(conversationBatch))
         .map((data) =>
             run(PostprocessTask(data, steps)).then((value) => switch (value) {
                   PostprocessResponse result => result.batch,
                   var e => throw UnimplementedError(e.toString())
                 }))
         .transform(SynchronizingTransformer<List<Conversation>>(workers.length))
-        .transform(ExpandingTransformer());
+        .transform(const ExpandingTransformer());
   }
 
   Future<WorkerResponse> run(WorkerMessage msg) {
