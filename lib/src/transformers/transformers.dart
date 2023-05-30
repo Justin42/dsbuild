@@ -205,11 +205,14 @@ class RegexExtract extends Preprocessor {
 }
 
 class ExactReplace extends Preprocessor {
-  final List replacements;
+  final IList<({String match, String replace})> replacements;
   final bool recursive;
 
   ExactReplace(super.config)
-      : replacements = config['replacements'],
+      : replacements = IList([
+          for (List replacement in config['replacements'])
+            (match: replacement[0], replace: replacement[1])
+        ]),
         recursive = config['recursive'] ?? false;
 
   @override
@@ -223,8 +226,8 @@ class ExactReplace extends Preprocessor {
         bool modified = false;
         do {
           hasMatches = false;
-          for (var replacement in replacements) {
-            String text = lastText.replaceAll(replacement[0], replacement[1]);
+          for (var (:match, :replace) in replacements) {
+            String text = lastText.replaceAll(match, replace);
             if (!identical(text, lastText)) {
               lastText = text;
               hasMatches = true;
@@ -241,11 +244,14 @@ class ExactReplace extends Preprocessor {
 }
 
 class ExactReplacePost extends Postprocessor {
-  final List replacements;
+  final IList<({String match, String replace})> replacements;
   final bool recursive;
 
   ExactReplacePost(super.config)
-      : replacements = config['replacements'],
+      : replacements = IList([
+          for (List replacement in config['replacements'])
+            (match: replacement[0], replace: replacement[1])
+        ]),
         recursive = config['recursive'] ?? false;
 
   @override
@@ -263,8 +269,8 @@ class ExactReplacePost extends Postprocessor {
           do {
             hasMatches = false;
             for (int i = 0; i < replacements.length; i++) {
-              String text =
-                  lastText.replaceAll(replacements[i][0], replacements[i][1]);
+              var (:match, :replace) = replacements[i];
+              String text = lastText.replaceAll(match, replace);
               if (!identical(text, lastText)) {
                 lastText = text;
                 hasMatches = true;
