@@ -5,7 +5,7 @@ import 'package:meta/meta.dart';
 class Conversation {
   final int id;
   final IList<Message> messages;
-  final Map<String, dynamic>? meta;
+  final IMap<String, dynamic>? meta;
 
   const Conversation(this.id,
       {this.messages = const IListConst([]), this.meta});
@@ -18,7 +18,7 @@ class Conversation {
   }
 
   Conversation copyWith(
-          {int? id, IList<Message>? messages, Map<String, dynamic>? meta}) =>
+          {int? id, IList<Message>? messages, IMap<String, dynamic>? meta}) =>
       Conversation(id ?? this.id,
           messages: messages ?? this.messages, meta: meta ?? this.meta);
 }

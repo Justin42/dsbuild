@@ -199,7 +199,8 @@ class DsBuild {
         if (data.conversationId != convoId) {
           if (convoMessages.isNotEmpty) {
             Conversation conversation = Conversation(convoId.hashCode,
-                messages: convoMessages.toIList(), meta: {'inputId': convoId});
+                messages: convoMessages.toIList(),
+                meta: IMap({'inputId': convoId}));
             sink.add(conversation);
             convoMessages = [];
           }
