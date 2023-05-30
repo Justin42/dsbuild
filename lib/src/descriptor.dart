@@ -9,18 +9,8 @@ class DatasetDescriptor {
   final int messageBatch;
   final int conversationBatch;
   final int? threads;
+  final List<PassDescriptor> passes;
   final List<String> cleanDirectory;
-  final List<InputDescriptor> inputs;
-  final List<OutputDescriptor> outputs;
-
-  // Collects preprocessor step descriptors from inputs.
-  List<StepDescriptor> get preprocessorSteps {
-    List<StepDescriptor> steps = [];
-    for (InputDescriptor input in inputs) {
-      steps.addAll(input.steps);
-    }
-    return steps;
-  }
 
   const DatasetDescriptor(
       {this.name = 'default',
@@ -31,9 +21,8 @@ class DatasetDescriptor {
       this.messageBatch = 5000,
       this.conversationBatch = 100,
       this.threads,
-      this.cleanDirectory = const [],
-      this.inputs = const [],
-      this.outputs = const []});
+      this.passes = const [],
+      this.cleanDirectory = const []});
 
   DatasetDescriptor.fromYaml(YamlMap data)
       : name = data['name'] ?? 'default',
@@ -44,10 +33,38 @@ class DatasetDescriptor {
         messageBatch = data['build']?['messageBatch'] ?? 5000,
         conversationBatch = data['build']?['conversationBatch'] ?? 100,
         threads = data['build']?['threads'],
+        passes = [
+          for (var pass in data['passes']) PassDescriptor.fromYaml(pass)
+        ],
         cleanDirectory = [
           for (var dir in data['build']?['cleanDirectory']) dir.toString()
-        ],
-        inputs = [
+        ];
+}
+
+class PassDescriptor {
+  final List<InputDescriptor> inputs;
+  final List<OutputDescriptor> outputs;
+
+  List<StepDescriptor> get preprocessorSteps {
+    List<StepDescriptor> steps = [];
+    for (InputDescriptor input in inputs) {
+      steps.addAll(input.steps);
+    }
+    return steps;
+  }
+
+  List<StepDescriptor> get postprocessorSteps {
+    List<StepDescriptor> steps = [];
+    for (OutputDescriptor output in outputs) {
+      steps.addAll(output.steps);
+    }
+    return steps;
+  }
+
+  const PassDescriptor(this.inputs, this.outputs);
+
+  PassDescriptor.fromYaml(YamlMap data)
+      : inputs = [
           for (var input in data['input']) InputDescriptor.fromYaml(input)
         ],
         outputs = [

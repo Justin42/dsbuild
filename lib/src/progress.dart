@@ -11,18 +11,14 @@ class ProgressState {
   final int conversationsDropped;
   final int conversationsProcessed;
 
-  final int totalInputFiles;
   final List<InputDescriptor> inputsProcessed;
 
-  final int totalOutputFiles;
   final List<OutputDescriptor> outputsProcessed;
 
   final bool complete;
 
   const ProgressState(
-      {this.totalInputFiles = 0,
-      this.totalOutputFiles = 0,
-      this.messagesTotal = 0,
+      {this.messagesTotal = 0,
       this.messagesDropped = 0,
       this.messagesProcessed = 0,
       this.conversationsTotal = 0,
@@ -45,8 +41,6 @@ class ProgressState {
           List<OutputDescriptor>? outputsProcessed,
           bool? complete}) =>
       ProgressState(
-          totalInputFiles: totalInputFiles ?? this.totalInputFiles,
-          totalOutputFiles: totalOutputFiles ?? this.totalOutputFiles,
           messagesTotal: messagesTotal ?? this.messagesTotal,
           messagesDropped: messagesDropped ?? this.messagesDropped,
           messagesProcessed: messagesProcessed ?? this.messagesProcessed,

@@ -68,9 +68,7 @@ class DsBuild {
             Registry(builtinReaders, builtinWriters,
                 preprocessors: builtinPreprocessors,
                 postprocessors: builtinPostprocessors),
-        progress = ProgressBloc(ProgressState(
-            totalInputFiles: descriptor.inputs.length,
-            totalOutputFiles: descriptor.outputs.length)),
+        progress = ProgressBloc(ProgressState()),
         workerPool = workerPool ??
             WorkerPool(
                 messageBatch: descriptor.messageBatch,
@@ -80,33 +78,35 @@ class DsBuild {
   List<String> verifyDescriptor() {
     List<String> errors = [];
 
-    // Verify preprocessors
-    for (StepDescriptor step in repository.descriptor.preprocessorSteps) {
-      if (!registry.preprocessors.containsKey(step.type)) {
-        errors.add("No preprocessor matching type '${step.type}'");
-      }
-    }
-
-    // Verify readers
-    for (InputDescriptor input in repository.descriptor.inputs) {
-      if (!registry.readers.containsKey(input.reader.type)) {
-        errors.add("No reader matching type '${input.reader.type}'");
-      }
-    }
-
-    // Verify postprocessors
-    for (OutputDescriptor output in repository.descriptor.outputs) {
-      for (StepDescriptor step in output.steps) {
-        if (!registry.postprocessors.containsKey(step.type)) {
-          errors.add("No postprocessor matching type '${step.type}'");
+    for (PassDescriptor pass in repository.descriptor.passes) {
+      // Verify preprocessors
+      for (StepDescriptor step in pass.preprocessorSteps) {
+        if (!registry.preprocessors.containsKey(step.type)) {
+          errors.add("No preprocessor matching type '${step.type}'");
         }
       }
-    }
 
-    // Verify writers
-    for (OutputDescriptor output in repository.descriptor.outputs) {
-      if (!registry.writers.containsKey(output.writer.type)) {
-        errors.add("No writer matching type '${output.writer.type}'");
+      // Verify readers
+      for (InputDescriptor input in pass.inputs) {
+        if (!registry.readers.containsKey(input.reader.type)) {
+          errors.add("No reader matching type '${input.reader.type}'");
+        }
+      }
+
+      // Verify postprocessors
+      for (OutputDescriptor output in pass.outputs) {
+        for (StepDescriptor step in output.steps) {
+          if (!registry.postprocessors.containsKey(step.type)) {
+            errors.add("No postprocessor matching type '${step.type}'");
+          }
+        }
+      }
+
+      // Verify writers
+      for (OutputDescriptor output in pass.outputs) {
+        if (!registry.writers.containsKey(output.writer.type)) {
+          errors.add("No writer matching type '${output.writer.type}'");
+        }
       }
     }
 
@@ -117,31 +117,32 @@ class DsBuild {
   /// yields an InputDescriptor for each newly satisfied dependency.
   Stream<InputDescriptor> fetchRequirements() async* {
     HttpClient client = HttpClient();
-    for (int i = 0; i < repository.descriptor.inputs.length; i++) {
-      InputDescriptor input = repository.descriptor.inputs[i];
-      if (input.source == null) {
-        //log.info("Skipping retrieval for ${input.path} (No source uri)");
-        continue;
-      }
-      if (await File(input.path).exists()) {
-        log.fine("Skipping fetch for existing input file '${input.path}'");
-      } else {
-        if (!['http', 'https'].contains(input.source!.scheme)) {
-          log.severe("Unhandled URI input: '${input.source}'");
+    for (PassDescriptor pass in repository.descriptor.passes) {
+      for (InputDescriptor input in pass.inputs) {
+        if (input.source == null) {
+          //log.info("Skipping retrieval for ${input.path} (No source uri)");
           continue;
         }
-        log.info("Retrieving ${input.source}");
-        final request = await client.getUrl(input.source!);
-        final response = await request.close();
-        if (response.statusCode != HttpStatus.ok) {
-          log.warning(
-              "Failed to retrieve input data. Received http status ${response.statusCode}");
-          await response.drain();
+        if (await File(input.path).exists()) {
+          log.fine("Skipping fetch for existing input file '${input.path}'");
         } else {
-          File file = await File(input.path).create(recursive: true);
-          await response.pipe(file.openWrite());
+          if (!['http', 'https'].contains(input.source!.scheme)) {
+            log.severe("Unhandled URI input: '${input.source}'");
+            continue;
+          }
+          log.info("Retrieving ${input.source}");
+          final request = await client.getUrl(input.source!);
+          final response = await request.close();
+          if (response.statusCode != HttpStatus.ok) {
+            log.warning(
+                "Failed to retrieve input data. Received http status ${response.statusCode}");
+            await response.drain();
+          } else {
+            File file = await File(input.path).create(recursive: true);
+            await response.pipe(file.openWrite());
+          }
+          yield input;
         }
-        yield input;
       }
     }
     client.close();
@@ -226,9 +227,9 @@ class DsBuild {
 
   /// Transform each input according to it's InputDescriptor.
   /// The transformation output is concatenated, in the order of input, into a single Conversation stream
-  Stream<Conversation> transformAll() async* {
+  Stream<Conversation> transformAll(PassDescriptor pass) async* {
     List<Stream<MessageEnvelope>> pending = [];
-    for (InputDescriptor inputDescriptor in repository.descriptor.inputs) {
+    for (InputDescriptor inputDescriptor in pass.inputs) {
       Stream<MessageEnvelope> pipeline =
           transform(read(inputDescriptor), inputDescriptor.steps);
       pending.add(pipeline);
@@ -253,8 +254,9 @@ class DsBuild {
 
   /// Write the conversation stream to all outputs.
   /// Performs any postprocessing steps for each output.
-  Stream<Conversation> writeAll(Stream<Conversation> conversations) async* {
-    for (OutputDescriptor output in repository.descriptor.outputs) {
+  Stream<Conversation> writeAll(
+      PassDescriptor pass, Stream<Conversation> conversations) async* {
+    for (OutputDescriptor output in pass.outputs) {
       conversations = postProcess(conversations, output);
       conversations = write(conversations, output);
     }

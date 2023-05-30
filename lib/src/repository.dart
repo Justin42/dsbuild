@@ -5,10 +5,12 @@ class Repository {
   final DatasetDescriptor descriptor;
 
   void updateInputHash(String path, String hash) {
-    for (int i = 0; i < descriptor.inputs.length; i++) {
-      InputDescriptor current = descriptor.inputs[i];
-      if (current.path == path) {
-        descriptor.inputs[i] = current.copyWith(hash: hash);
+    for (PassDescriptor pass in descriptor.passes) {
+      for (int i = 0; i < pass.inputs.length; i++) {
+        InputDescriptor current = pass.inputs[0];
+        if (current.path == path) {
+          pass.inputs[i] = current.copyWith(hash: hash);
+        }
       }
     }
   }

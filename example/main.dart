@@ -47,11 +47,13 @@ void main(List<String> args) async {
 
   // Build the transformation pipeline. This is the result of transforming and concatenating all inputs.
   // Custom pipelines can be built using the registry and the information available in the descriptor.
-  Stream<Conversation> conversations = dsBuild.transformAll();
+  for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
+    Stream<Conversation> conversations = dsBuild.transformAll(pass);
 
-  // Write the outputs. This also applies any postprocessor transformations for each output.
-  // The implementation is nearly identical to transformAll, and custom pipelines can be built the same way.
-  await dsBuild.writeAll(conversations).last;
+    // Write the outputs. This also applies any postprocessor transformations for each output.
+    // The implementation is nearly identical to transformAll, and custom pipelines can be built the same way.
+    await dsBuild.writeAll(pass, conversations).last;
+  }
 
   // Final progress stream events are expected to be pushed by the build script.
   // This is more useful if you intend to trigger additional build steps.
