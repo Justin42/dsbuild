@@ -17,7 +17,7 @@ Logger _log = Logger("dsbuild/transformers");
 
 class HtmlStrip extends Preprocessor {
   final bool caseSensitive;
-  final List<Pattern> stripAnchorPatterns;
+  final IList<Pattern> stripAnchorPatterns;
   final String anchorSelector;
 
   int strippedAnchors = 0;
@@ -25,8 +25,13 @@ class HtmlStrip extends Preprocessor {
   HtmlStrip(super.config)
       : caseSensitive = config['caseSensitive'] ?? true,
         stripAnchorPatterns = config['stripAnchorPatterns'] != null
-            ? [for (String pattern in config['stripAnchorPatterns']) pattern]
-            : [],
+            ? IList([
+                for (String pattern in config['stripAnchorPatterns'])
+                  config['caseSensitive'] ?? true
+                      ? pattern
+                      : pattern.toLowerCase()
+              ])
+            : const IListConst([]),
         anchorSelector = config['anchorSelector'] ?? "a, img";
 
   @override
@@ -53,7 +58,6 @@ class HtmlStrip extends Preprocessor {
             node.remove();
           }
         }
-
         sink.add(data.copyWithValue(fragment.text ?? ""));
       }, handleDone: (sink) {
         _log.finer("$runtimeType stripped $strippedAnchors anchor texts.");
@@ -70,12 +74,17 @@ class Trim extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        sink.add(data.copyWithValue(data.message.value.trim()));
+        String text = data.message.value.trim();
+        if (!identical(text, data.message.value)) {
+          sink.add(data.copyWithValue(text));
+        } else {
+          sink.add(data);
+        }
       });
 }
 
 class RegexReplace extends Preprocessor {
-  final List<RegExp> regex;
+  final IList<RegExp> regex;
 
   RegexReplace(super.config)
       : regex = [
@@ -85,7 +94,7 @@ class RegexReplace extends Preprocessor {
                 caseSensitive: config['caseSensitive'] ?? true,
                 unicode: config['unicode'] ?? false,
                 dotAll: config['dotAll'] ?? false)
-        ];
+        ].lock;
 
   @override
   String get description => "Regex pattern replacement";
@@ -102,7 +111,7 @@ class RegexReplace extends Preprocessor {
 }
 
 class RegexReplacePost extends Postprocessor {
-  final List<RegExp> regex;
+  final IList<RegExp> regex;
 
   RegexReplacePost(super.config)
       : regex = [
@@ -112,7 +121,7 @@ class RegexReplacePost extends Postprocessor {
                 caseSensitive: config['caseSensitive'] ?? true,
                 unicode: config['unicode'] ?? false,
                 dotAll: config['dotAll'] ?? false)
-        ];
+        ].lock;
 
   @override
   String get description => "Regex pattern replacement";
@@ -133,7 +142,7 @@ class RegexReplacePost extends Postprocessor {
 }
 
 class RegexExtract extends Preprocessor {
-  final List<RegExp> regex;
+  final IList<RegExp> regex;
   final File file;
   IOSink? ioSink;
   final bool escape;
@@ -146,7 +155,7 @@ class RegexExtract extends Preprocessor {
                 caseSensitive: config['caseSensitive'] ?? true,
                 unicode: config['unicode'] ?? false,
                 dotAll: config['dotAll'] ?? false)
-        ],
+        ].lock,
         file = File(config['path']
             .toString()
             .replaceAll("%worker%", Isolate.current.debugName ?? '0')),
@@ -211,18 +220,23 @@ class ExactReplace extends Preprocessor {
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         String lastText = data.value;
         bool hasMatches = false;
+        bool modified = false;
         do {
           hasMatches = false;
-          for (int i = 0; i < replacements.length; i++) {
-            String text =
-                lastText.replaceAll(replacements[i][0], replacements[i][1]);
-            if (text != lastText) {
+          for (var replacement in replacements) {
+            String text = lastText.replaceAll(replacement[0], replacement[1]);
+            if (!identical(text, lastText)) {
               lastText = text;
               hasMatches = true;
+              modified = true;
             }
           }
         } while (hasMatches && recursive);
-        sink.add(data.copyWithValue(lastText));
+        if (modified) {
+          sink.add(data.copyWithValue(lastText));
+        } else {
+          sink.add(data);
+        }
       });
 }
 
@@ -240,7 +254,8 @@ class ExactReplacePost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        IList<Message> messages = data.messages;
+        List<Message> messages = data.messages.unlockLazy;
+        bool modified = false;
         for (int i = 0; i < data.messages.length; i++) {
           Message message = data.messages[i];
           String lastText = message.value;
@@ -250,18 +265,19 @@ class ExactReplacePost extends Postprocessor {
             for (int i = 0; i < replacements.length; i++) {
               String text =
                   lastText.replaceAll(replacements[i][0], replacements[i][1]);
-              if (text != lastText) {
+              if (!identical(text, lastText)) {
                 lastText = text;
                 hasMatches = true;
+                modified = true;
               }
             }
           } while (hasMatches && recursive);
-          if (lastText != message.value) {
-            messages = messages.replace(i, message.copyWith(value: lastText));
+          if (!identical(lastText, message.value)) {
+            messages[i] = message.copyWith(value: lastText);
           }
         }
-        if (messages != data.messages) {
-          sink.add(data.copyWith(messages: messages));
+        if (modified) {
+          sink.add(data.copyWith(messages: messages.lock));
         } else {
           sink.add(data);
         }
@@ -271,12 +287,15 @@ class ExactReplacePost extends Postprocessor {
 enum FullMatchAction { drop }
 
 class FullMatch extends Preprocessor {
-  final List<String> patterns;
+  final IList<String> patterns;
   final FullMatchAction action;
   final bool caseSensitive;
 
   FullMatch(super.config)
-      : patterns = [for (String patterns in config['patterns']) patterns],
+      : patterns = [
+          for (String patterns in config['patterns'])
+            config['caseSensitive'] ?? true ? patterns : patterns.toLowerCase()
+        ].lock,
         action = FullMatchAction.values.byName(config['action']),
         caseSensitive = config['caseSensitive'] ?? true;
 
@@ -291,38 +310,39 @@ class FullMatch extends Preprocessor {
   @override
   StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        bool skip = false;
-        String compareValue =
-            caseSensitive ? data.value : data.value.toLowerCase();
-        for (String pattern in patterns) {
-          pattern = caseSensitive ? pattern : pattern.toLowerCase();
-          switch (action) {
-            case FullMatchAction.drop:
-              if (compareValue == pattern) {
-                skip = true;
-                break;
+        switch (action) {
+          case FullMatchAction.drop:
+            bool skip = false;
+            String compareValue =
+                caseSensitive ? data.value : data.value.toLowerCase();
+            for (String pattern in patterns) {
+              switch (action) {
+                case FullMatchAction.drop:
+                  if (compareValue == pattern) {
+                    skip = true;
+                    break;
+                  }
               }
-          }
-          if (skip) break;
-        }
-        if (!skip) {
-          sink.add(data);
+              if (skip) break;
+            }
+            if (!skip) {
+              sink.add(data);
+            }
+            break;
         }
       });
 }
 
 class FullMatchPost extends Postprocessor {
-  final List<String> patterns;
+  final IList<String> patterns;
   final FullMatchAction action;
   final bool caseSensitive;
 
   FullMatchPost(super.config)
       : patterns = [
           for (String patterns in config['patterns'])
-            (config['caseSensitive'] ?? true)
-                ? patterns
-                : patterns.toLowerCase()
-        ],
+            config['caseSensitive'] ?? true ? patterns : patterns.toLowerCase()
+        ].lock,
         action = FullMatchAction.values.byName(config['action']),
         caseSensitive = config['caseSensitive'] ?? true;
 
@@ -337,19 +357,21 @@ class FullMatchPost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        IList<Message> messages = data.messages.retainWhere((element) {
-          String compareValue =
-              caseSensitive ? element.value : element.value.toLowerCase();
-          for (String pattern in patterns) {
-            switch (action) {
-              case FullMatchAction.drop:
+        IList<Message> messages;
+        switch (action) {
+          case FullMatchAction.drop:
+            messages = data.messages.retainWhere((element) {
+              String compareValue =
+                  caseSensitive ? element.value : element.value.toLowerCase();
+              for (String pattern in patterns) {
                 if (compareValue == pattern) {
                   return false;
                 }
-            }
-          }
-          return true;
-        });
+              }
+              return true;
+            });
+            break;
+        }
         sink.add(data.copyWith(messages: messages));
       });
 }
@@ -414,22 +436,18 @@ class RenameParticipants extends Postprocessor {
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         Map<String, String> renameMap = {};
-        List<Message> messages =
-            List.filled(data.messages.length, Message.empty());
-        for (int i = 0; i < data.messages.length; i++) {
-          Message message = data.messages[i];
+        List<Message> messages = data.messages.unlock;
+        for (var (i, message) in data.messages.indexed) {
           if (!renameMap.containsKey(message.from)) {
             if (renameMap.length < names.length) {
               messages[i] = message.copyWith(from: names[renameMap.length]);
               renameMap[message.from] = names[renameMap.length];
-            } else {
-              messages[i] = message;
             }
           } else {
             messages[i] = message.copyWith(from: renameMap[message.from]);
           }
         }
-        sink.add(data.copyWith(messages: messages.toIList()));
+        sink.add(data.copyWith(messages: messages.lock));
       });
 }
 
@@ -504,9 +522,19 @@ class TrimPost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        sink.add(data.copyWith(
-            messages: data.messages
-                .map((message) => message.copyWith(value: message.value.trim()))
-                .toIList()));
+        List<Message> messages = data.messages.unlockLazy;
+        bool modified = false;
+        for (var (i, message) in data.messages.indexed) {
+          String text = message.value.trim();
+          if (!identical(text, message.value)) {
+            messages[i] = message.copyWith(value: text);
+            modified = true;
+          }
+        }
+        if (modified) {
+          sink.add(data.copyWith(messages: messages.lock));
+        } else {
+          sink.add(data);
+        }
       });
 }
