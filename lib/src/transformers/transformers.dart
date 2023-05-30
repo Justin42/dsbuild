@@ -443,7 +443,8 @@ class RenameParticipants extends Postprocessor {
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         Map<String, String> renameMap = {};
         List<Message> messages = data.messages.unlock;
-        for (var (i, message) in data.messages.indexed) {
+        for (int i = 0; i < data.messages.length; i++) {
+          Message message = data.messages[i];
           if (!renameMap.containsKey(message.from)) {
             if (renameMap.length < names.length) {
               messages[i] = message.copyWith(from: names[renameMap.length]);
@@ -530,7 +531,8 @@ class TrimPost extends Postprocessor {
       StreamTransformer.fromHandlers(handleData: (data, sink) {
         List<Message> messages = data.messages.unlockLazy;
         bool modified = false;
-        for (var (i, message) in data.messages.indexed) {
+        for (int i = 0; i < data.messages.length; i++) {
+          Message message = data.messages[i];
           String text = message.value.trim();
           if (!identical(text, message.value)) {
             messages[i] = message.copyWith(value: text);
