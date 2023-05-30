@@ -34,7 +34,7 @@ class DsBuild {
     'ExactReplace': (config) => t.ExactReplace(config),
     'FullMatch': (config) => t.FullMatch(config),
     'RegexExtract': (config) => t.RegexExtract(config),
-    'Encoding': (config) => t.EncodingPre(config),
+    'Encoding': (config) => t.Encoding(config),
   };
 
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
