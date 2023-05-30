@@ -27,14 +27,18 @@ class FastChatWriter extends Writer {
     yield* conversations
         .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
       if (buffer.isEmpty) {
-        buffer.write(
-            encoder.convert({'id': data.id, 'conversations': data.messages}));
+        buffer.write(encoder.convert({
+          'id': data.id,
+          'conversations': data.messages.toJson((p0) => p0)
+        }));
       } else {
         ioSink.write(buffer);
         ioSink.write(",\n");
         buffer.clear();
-        buffer.write(
-            encoder.convert({'id': data.id, 'conversations': data.messages}));
+        buffer.write(encoder.convert({
+          'id': data.id,
+          'conversations': data.messages.toJson((p0) => p0)
+        }));
       }
       sink.add(data);
     }, handleDone: (sink) async {

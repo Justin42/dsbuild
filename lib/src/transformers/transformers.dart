@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:logging/logging.dart';
@@ -127,7 +128,7 @@ class RegexReplacePost extends Postprocessor {
                     e.value.replaceAll(regex[i], config['replacements'][i][1]));
           }
           return e;
-        }).toList()));
+        }).toIList()));
       });
 }
 
@@ -239,8 +240,10 @@ class ExactReplacePost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
+        IList<Message> messages = data.messages;
         for (int i = 0; i < data.messages.length; i++) {
-          String lastText = data.messages[i].value;
+          Message message = data.messages[i];
+          String lastText = message.value;
           bool hasMatches = false;
           do {
             hasMatches = false;
@@ -253,11 +256,15 @@ class ExactReplacePost extends Postprocessor {
               }
             }
           } while (hasMatches && recursive);
-          if (lastText != data.messages[i].value) {
-            data.messages[i] = data.messages[i].copyWith(value: lastText);
+          if (lastText != message.value) {
+            messages = messages.replace(i, message.copyWith(value: lastText));
           }
         }
-        sink.add(data);
+        if (messages != data.messages) {
+          sink.add(data.copyWith(messages: messages));
+        } else {
+          sink.add(data);
+        }
       });
 }
 
@@ -310,7 +317,12 @@ class FullMatchPost extends Postprocessor {
   final bool caseSensitive;
 
   FullMatchPost(super.config)
-      : patterns = [for (String patterns in config['patterns']) patterns],
+      : patterns = [
+          for (String patterns in config['patterns'])
+            (config['caseSensitive'] ?? true)
+                ? patterns
+                : patterns.toLowerCase()
+        ],
         action = FullMatchAction.values.byName(config['action']),
         caseSensitive = config['caseSensitive'] ?? true;
 
@@ -325,29 +337,20 @@ class FullMatchPost extends Postprocessor {
   @override
   StreamTransformer<Conversation, Conversation> get transformer =>
       StreamTransformer.fromHandlers(handleData: (data, sink) {
-        List<Message?> messages = List.filled(data.messages.length, null);
-        for (int i = 0; i < data.messages.length; i++) {
-          bool skip = false;
-          String compareValue = caseSensitive
-              ? data.messages[i].value
-              : data.messages[i].value.toLowerCase();
+        IList<Message> messages = data.messages.retainWhere((element) {
+          String compareValue =
+              caseSensitive ? element.value : element.value.toLowerCase();
           for (String pattern in patterns) {
-            pattern = caseSensitive ? pattern : pattern.toLowerCase();
             switch (action) {
               case FullMatchAction.drop:
                 if (compareValue == pattern) {
-                  skip = true;
-                  break;
+                  return false;
                 }
             }
-            if (skip) break;
           }
-          if (!skip) {
-            messages[i] = data.messages[i];
-          }
-        }
-        sink.add(
-            data.copyWith(messages: messages.nonNulls.toList(growable: false)));
+          return true;
+        });
+        sink.add(data.copyWith(messages: messages));
       });
 }
 
@@ -426,7 +429,7 @@ class RenameParticipants extends Postprocessor {
             messages[i] = message.copyWith(from: renameMap[message.from]);
           }
         }
-        sink.add(data.copyWith(messages: messages));
+        sink.add(data.copyWith(messages: messages.toIList()));
       });
 }
 
@@ -488,7 +491,7 @@ class EncodingPost extends Postprocessor {
               ? result.replaceAll(r'�', invalidChar)
               : result;
           return message.copyWith(value: result);
-        }).toList(growable: false)));
+        }).toIList()));
       });
 }
 
@@ -504,6 +507,6 @@ class TrimPost extends Postprocessor {
         sink.add(data.copyWith(
             messages: data.messages
                 .map((message) => message.copyWith(value: message.value.trim()))
-                .toList()));
+                .toIList()));
       });
 }

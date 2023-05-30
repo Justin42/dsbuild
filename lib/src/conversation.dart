@@ -1,9 +1,12 @@
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+
 class Conversation {
   final int id;
-  final List<Message> messages;
+  final IList<Message> messages;
   final Map<String, dynamic>? meta;
 
-  const Conversation(this.id, {this.messages = const [], this.meta});
+  const Conversation(this.id,
+      {this.messages = const IListConst([]), this.meta});
 
   Map<String, dynamic> toJson() {
     return {
@@ -13,7 +16,7 @@ class Conversation {
   }
 
   Conversation copyWith(
-          {int? id, List<Message>? messages, Map<String, dynamic>? meta}) =>
+          {int? id, IList<Message>? messages, Map<String, dynamic>? meta}) =>
       Conversation(id ?? this.id,
           messages: messages ?? this.messages, meta: meta ?? this.meta);
 }

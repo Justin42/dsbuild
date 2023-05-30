@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dsbuild/src/writers/message_writer.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:logging/logging.dart';
 
 import '../concurrency.dart';
@@ -198,7 +199,7 @@ class DsBuild {
         if (data.conversationId != convoId) {
           if (convoMessages.isNotEmpty) {
             Conversation conversation = Conversation(convoId.hashCode,
-                messages: convoMessages, meta: {'inputId': convoId});
+                messages: convoMessages.toIList(), meta: {'inputId': convoId});
             sink.add(conversation);
             convoMessages = [];
           }
