@@ -65,5 +65,3 @@ class MessageEnvelope {
   MessageEnvelope copyWithValue(String value) =>
       copyWith(message: message.copyWith(value: value));
 }
-
-enum Sender { user, other }
