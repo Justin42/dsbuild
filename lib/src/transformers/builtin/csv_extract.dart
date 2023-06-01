@@ -32,7 +32,7 @@ class CsvExtract extends Preprocessor {
         fields = [
           for (var field in config['fields']) Field.values.byName(field)
         ],
-        ignoreDuplicates = config['ignore_duplicates'] ?? false,
+        ignoreDuplicates = config['ignoreDuplicates'] ?? false,
         duplicates = HashSet<String>(),
         csv = ListToCsvConverter(),
         sb = StringBuffer();

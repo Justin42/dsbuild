@@ -18,7 +18,7 @@ class FileConcatenate extends Writer {
 
   FileConcatenate(super.config)
       : globs = [for (var file in config['files'] ?? []) Glob(file.toString())],
-        ignoreDuplicateLines = config['ignore_duplicate_lines'] ?? false,
+        ignoreDuplicateLines = config['ignoreDuplicateLines'] ?? false,
         delete = config['delete'] ?? false,
         duplicates = HashSet();
 
