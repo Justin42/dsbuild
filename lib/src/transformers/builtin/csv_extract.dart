@@ -19,7 +19,7 @@ class CsvExtract extends Preprocessor {
   final List<String> header;
   final List<Field> fields;
   final bool ignoreDuplicates;
-  final HashSet<int> duplicates;
+  final HashSet<String> duplicates;
   final ListToCsvConverter csv;
   final StringBuffer sb;
   IOSink? ioSink;
@@ -32,8 +32,8 @@ class CsvExtract extends Preprocessor {
         fields = [
           for (var field in config['fields']) Field.values.byName(field)
         ],
-        ignoreDuplicates = config['ignoreDuplicates'] ?? false,
-        duplicates = HashSet<int>(),
+        ignoreDuplicates = config['ignore_duplicates'] ?? false,
+        duplicates = HashSet<String>(),
         csv = ListToCsvConverter(),
         sb = StringBuffer();
 
@@ -68,14 +68,13 @@ class CsvExtract extends Preprocessor {
         String? csvRow = csv.convertSingleRow(sb, newRow);
         if (csvRow != null && csvRow.isNotEmpty) {
           if (ignoreDuplicates) {
-            if (duplicates.add(csvRow.hashCode)) {
+            if (duplicates.add(csvRow)) {
               ioSink?.writeln(csvRow);
-              sb.clear();
             }
           } else {
             ioSink?.writeln(csvRow);
-            sb.clear();
           }
+          sb.clear();
         }
         sink.add(data);
       }, handleDone: (sink) async {
