@@ -109,15 +109,23 @@ void main(List<String> args) async {
     }
   }
 
-  for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
+  for (var (int i, PassDescriptor pass)
+      in dsBuild.repository.descriptor.passes.indexed) {
     log.info("Preparing pipeline...");
     Stream<Conversation> conversations = dsBuild.transformAll(pass);
 
     log.info("Performing transformations...");
     await dsBuild.writeAll(pass, conversations).last;
-    dsBuild.workerPool.stopLocalWorkers();
-    dsBuild.progress.add(const BuildComplete());
+    dsBuild.progress.add(i + 1 < dsBuild.repository.descriptor.passes.length
+        ? const PassComplete(resetCounts: true)
+        : const PassComplete(resetCounts: false));
+    log.info(
+        "Pass ${i + 1} / ${dsBuild.repository.descriptor.passes.length} completed.");
   }
+  log.finer("Stopping local workers.");
+  dsBuild.workerPool.stopLocalWorkers();
+  dsBuild.progress.add(const BuildComplete());
+
   log.info("All output finalized.");
 
   if (dsBuild.repository.descriptor.generateHashes ||

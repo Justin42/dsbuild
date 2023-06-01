@@ -10,6 +10,7 @@ class ProgressState {
   final int conversationsTotal;
   final int conversationsDropped;
   final int conversationsProcessed;
+  final int passesComplete;
 
   final List<InputDescriptor> inputsProcessed;
 
@@ -24,6 +25,7 @@ class ProgressState {
       this.conversationsTotal = 0,
       this.conversationsDropped = 0,
       this.conversationsProcessed = 0,
+      this.passesComplete = 0,
       this.inputsProcessed = const [],
       this.outputsProcessed = const [],
       this.complete = false});
@@ -37,6 +39,7 @@ class ProgressState {
           int? conversationsTotal,
           int? conversationsDropped,
           int? conversationsProcessed,
+          int? passesComplete,
           List<InputDescriptor>? inputsProcessed,
           List<OutputDescriptor>? outputsProcessed,
           bool? complete}) =>
@@ -49,6 +52,7 @@ class ProgressState {
               conversationsDropped ?? this.conversationsDropped,
           conversationsProcessed:
               conversationsProcessed ?? this.conversationsProcessed,
+          passesComplete: passesComplete ?? this.passesComplete,
           inputsProcessed: inputsProcessed ?? this.inputsProcessed,
           outputsProcessed: outputsProcessed ?? this.outputsProcessed,
           complete: complete ?? this.complete);
@@ -79,6 +83,14 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
           outputsProcessed: state.outputsProcessed..add(event.descriptor)));
     });
     on<BuildComplete>((event, emit) => emit(state.copyWith(complete: true)));
+    on<PassComplete>((event, emit) => emit(state.copyWith(
+        passesComplete: state.passesComplete + 1,
+        conversationsProcessed: event.resetCounts ? 0 : null,
+        conversationsTotal: event.resetCounts ? 0 : null,
+        conversationsDropped: event.resetCounts ? 0 : null,
+        messagesProcessed: event.resetCounts ? 0 : null,
+        messagesTotal: event.resetCounts ? 0 : null,
+        messagesDropped: event.resetCounts ? 0 : null)));
   }
 }
 
@@ -122,4 +134,10 @@ class OutputFileProcessed extends ProgressEvent {
 
 class BuildComplete extends ProgressEvent {
   const BuildComplete();
+}
+
+class PassComplete extends ProgressEvent {
+  final bool resetCounts;
+
+  const PassComplete({this.resetCounts = false});
 }
