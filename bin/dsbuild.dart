@@ -4,8 +4,9 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/progress.dart';
+import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
@@ -36,13 +37,11 @@ void main(List<String> args) async {
     if (dir.contains("../") || dir.contains(r"..\")) {
       throw Exception("Clean directory escapes working directory");
     }
-    Directory directory =
-        Directory(p.relative(dir, from: Directory.current.path));
-    log.info("Cleaning build directory '${p.relative(directory.path)}'");
-    await directory.list().forEach((element) {
-      element.delete(recursive: true);
-      deletedFiles++;
-    });
+    Glob glob = Glob(dir);
+    for (FileSystemEntity entity
+        in glob.listSync(root: Directory.current.path)) {
+      entity.deleteSync(recursive: true);
+    }
   }
   log.info("Removed $deletedFiles files");
 
