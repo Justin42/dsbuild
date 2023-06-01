@@ -108,7 +108,7 @@ class InputDescriptor {
 
   InputDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
-        description = data['description'],
+        description = data['description'] ?? "",
         source = data['source'] != null ? Uri.parse(data['source']) : null,
         hash = data['sha512'],
         reader = (data['reader'] is String)
