@@ -35,6 +35,7 @@ class DsBuild {
     'FullMatch': (config) => t.FullMatch(config),
     'RegexExtract': (config) => t.RegexExtract(config),
     'Encoding': (config) => t.Encoding(config),
+    'CsvExtract': (config) => t.CsvExtract(config)
   };
 
   static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =

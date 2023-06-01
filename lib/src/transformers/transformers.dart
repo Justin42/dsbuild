@@ -1,3 +1,4 @@
+export './builtin/csv_extract.dart' show CsvExtract;
 export './builtin/encoding.dart' show Encoding, EncodingPost;
 export './builtin/exact_replace.dart' show ExactReplace, ExactReplacePost;
 export './builtin/full_match.dart' show FullMatch, FullMatchPost;
