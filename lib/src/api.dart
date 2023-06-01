@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/src/writers/file_concatenate_writer.dart';
 import 'package:dsbuild/src/writers/message_writer.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:logging/logging.dart';
@@ -57,6 +58,7 @@ class DsBuild {
   static final Map<String, Writer Function(Map)> builtinWriters = {
     'fastchat': (config) => FastChatWriter(config),
     'RawMessage': (config) => RawMessageWriter(config),
+    'FileConcatenate': (config) => FileConcatenate(config),
     'dsbuild': (config) => DsBuildWriter(config),
   };
 
