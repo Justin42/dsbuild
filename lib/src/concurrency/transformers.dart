@@ -18,10 +18,10 @@ class BufferingTransformer<T> extends StreamTransformerBase<T, List<T>> {
         buffer.clear();
       }
       buffer.add(event);
-    }, onDone: () {
+    }, onDone: () async {
       controller.add(buffer.toList(growable: false));
       buffer.clear();
-      controller.close();
+      await controller.close();
     });
     yield* controller.stream;
   }
