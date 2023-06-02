@@ -3,6 +3,8 @@ import 'package:meta/meta.dart';
 
 @immutable
 class Conversation {
+  static Conversation empty = const Conversation(0);
+
   final int id;
   final IList<Message> messages;
   final IMap<String, dynamic>? meta;
@@ -24,6 +26,8 @@ class Conversation {
 }
 
 class Message {
+  static Message empty = const Message('', '');
+
   final String from;
   final String value;
 
@@ -35,10 +39,6 @@ class Message {
 
   Message copyWith({String? from, String? value}) =>
       Message(from ?? this.from, value ?? this.value);
-
-  Message.empty()
-      : from = "",
-        value = "";
 }
 
 @immutable
