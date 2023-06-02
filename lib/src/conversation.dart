@@ -41,6 +41,7 @@ class Message {
         value = "";
 }
 
+@immutable
 class MessageEnvelope {
   final Message message;
   final String conversationId;
