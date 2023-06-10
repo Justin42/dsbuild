@@ -3,13 +3,17 @@ import 'dart:async';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../conversation.dart';
-import '../postprocessor.dart';
-import '../preprocessor.dart';
+import '../conversation_transformer.dart';
 
-class ExactReplace extends Preprocessor {
+/// Replace matches with a substitution.
+class ExactReplace extends ConversationTransformer {
+  /// Patterns and their substitutions.
   final IList<({String match, String replace})> replacements;
+
+  /// Match recursively
   final bool recursive;
 
+  /// Constructs a new instance
   ExactReplace(super.config)
       : replacements = IList([
           for (List replacement in config['replacements'])
@@ -21,51 +25,14 @@ class ExactReplace extends Preprocessor {
   String get description => "Simple substitution on exact match.";
 
   @override
-  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(handleData: (data, sink) {
-        String lastText = data.value;
-        bool hasMatches = false;
+  Stream<List<Conversation>> bind(Stream<List<Conversation>> stream) async* {
+    await for (List<Conversation> data in stream) {
+      IList<Conversation> conversations = IList(data);
+      for (var (int i, Conversation conversation) in data.indexed) {
+        List<Message> messages = conversation.messages.unlockLazy;
         bool modified = false;
-        do {
-          hasMatches = false;
-          for (var (:match, :replace) in replacements) {
-            String text = lastText.replaceAll(match, replace);
-            if (!identical(text, lastText)) {
-              lastText = text;
-              hasMatches = true;
-              modified = true;
-            }
-          }
-        } while (hasMatches && recursive);
-        if (modified) {
-          sink.add(data.copyWithValue(lastText));
-        } else {
-          sink.add(data);
-        }
-      });
-}
-
-class ExactReplacePost extends Postprocessor {
-  final IList<({String match, String replace})> replacements;
-  final bool recursive;
-
-  ExactReplacePost(super.config)
-      : replacements = IList([
-          for (List replacement in config['replacements'])
-            (match: replacement[0], replace: replacement[1])
-        ]),
-        recursive = config['recursive'] ?? false;
-
-  @override
-  String get description => "Simple substitution on exact match.";
-
-  @override
-  StreamTransformer<Conversation, Conversation> get transformer =>
-      StreamTransformer.fromHandlers(handleData: (data, sink) {
-        List<Message> messages = data.messages.unlockLazy;
-        bool modified = false;
-        for (int i = 0; i < data.messages.length; i++) {
-          Message message = data.messages[i];
+        for (int i = 0; i < conversation.messages.length; i++) {
+          Message message = conversation.messages[i];
           String lastText = message.value;
           bool hasMatches = false;
           do {
@@ -85,9 +52,11 @@ class ExactReplacePost extends Postprocessor {
           }
         }
         if (modified) {
-          sink.add(data.copyWith(messages: messages.lock));
-        } else {
-          sink.add(data);
+          conversations = conversations.replace(
+              i, conversation.copyWith(messages: messages));
         }
-      });
+      }
+      yield conversations.unlockLazy;
+    }
+  }
 }

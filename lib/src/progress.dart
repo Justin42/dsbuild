@@ -1,23 +1,32 @@
 import 'package:bloc/bloc.dart';
 
-import 'descriptor.dart';
-
+/// Progress
 class ProgressState {
+  /// Total messages
   final int messagesTotal;
+
+  /// Dropped messages
   final int messagesDropped;
+
+  /// Processed messages
   final int messagesProcessed;
 
+  /// Total conversations
   final int conversationsTotal;
+
+  /// Dropped conversations
   final int conversationsDropped;
+
+  /// Processed conversations
   final int conversationsProcessed;
+
+  /// Completed passes
   final int passesComplete;
 
-  final List<InputDescriptor> inputsProcessed;
-
-  final List<OutputDescriptor> outputsProcessed;
-
+  /// Complete
   final bool complete;
 
+  /// Create a new instance
   const ProgressState(
       {this.messagesTotal = 0,
       this.messagesDropped = 0,
@@ -26,10 +35,9 @@ class ProgressState {
       this.conversationsDropped = 0,
       this.conversationsProcessed = 0,
       this.passesComplete = 0,
-      this.inputsProcessed = const [],
-      this.outputsProcessed = const [],
       this.complete = false});
 
+  /// Copy the instance with the provided values.
   ProgressState copyWith(
           {int? totalInputFiles,
           int? totalOutputFiles,
@@ -40,8 +48,6 @@ class ProgressState {
           int? conversationsDropped,
           int? conversationsProcessed,
           int? passesComplete,
-          List<InputDescriptor>? inputsProcessed,
-          List<OutputDescriptor>? outputsProcessed,
           bool? complete}) =>
       ProgressState(
           messagesTotal: messagesTotal ?? this.messagesTotal,
@@ -53,12 +59,12 @@ class ProgressState {
           conversationsProcessed:
               conversationsProcessed ?? this.conversationsProcessed,
           passesComplete: passesComplete ?? this.passesComplete,
-          inputsProcessed: inputsProcessed ?? this.inputsProcessed,
-          outputsProcessed: outputsProcessed ?? this.outputsProcessed,
           complete: complete ?? this.complete);
 }
 
+/// Bloc for [ProgressState]
 class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
+  /// Create a new instance and bind listeners.
   ProgressBloc(super.initialState) {
     on<MessageRead>((event, emit) {
       emit(state.copyWith(messagesTotal: state.messagesTotal + event.count));
@@ -68,19 +74,12 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
           messagesProcessed: state.messagesProcessed + event.count));
     });
     on<ConversationRead>((event, emit) {
-      emit(state.copyWith(conversationsTotal: state.conversationsTotal + 1));
+      emit(state.copyWith(
+          conversationsTotal: state.conversationsTotal + event.count));
     });
     on<ConversationProcessed>((event, emit) {
       emit(state.copyWith(
           conversationsProcessed: state.conversationsProcessed + event.count));
-    });
-    on<InputFileProcessed>((event, emit) {
-      emit(state.copyWith(
-          inputsProcessed: state.inputsProcessed..add(event.descriptor)));
-    });
-    on<OutputFileProcessed>((event, emit) {
-      emit(state.copyWith(
-          outputsProcessed: state.outputsProcessed..add(event.descriptor)));
     });
     on<BuildComplete>((event, emit) => emit(state.copyWith(complete: true)));
     on<PassComplete>((event, emit) => emit(state.copyWith(
@@ -94,50 +93,59 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
   }
 }
 
+/// Event for [ProgressBloc]
 sealed class ProgressEvent {
+  /// Create a new instance
   const ProgressEvent();
 }
 
+/// Message read
 class MessageRead extends ProgressEvent {
+  /// Messages read
   final int count;
 
+  /// Create a new instance
   const MessageRead({this.count = 1});
 }
 
+/// Message processed
 class MessageProcessed extends ProgressEvent {
+  /// Messages processed
   final int count;
 
+  /// Create a new instance
   const MessageProcessed({this.count = 1});
 }
 
+/// Conversation read
 class ConversationRead extends ProgressEvent {
-  const ConversationRead();
-}
-
-class ConversationProcessed extends ProgressEvent {
+  /// Conversations read
   final int count;
 
+  /// Create a new instance
+  const ConversationRead({this.count = 1});
+}
+
+/// Conversation processed
+class ConversationProcessed extends ProgressEvent {
+  /// Conversations processed
+  final int count;
+
+  /// Create a new instance
   const ConversationProcessed({this.count = 1});
 }
 
-class InputFileProcessed extends ProgressEvent {
-  final InputDescriptor descriptor;
-
-  const InputFileProcessed(this.descriptor);
-}
-
-class OutputFileProcessed extends ProgressEvent {
-  final OutputDescriptor descriptor;
-
-  const OutputFileProcessed(this.descriptor);
-}
-
+/// Build completed
 class BuildComplete extends ProgressEvent {
+  /// Create a new instance
   const BuildComplete();
 }
 
+/// Pass completed
 class PassComplete extends ProgressEvent {
+  /// Reset progress counts
   final bool resetCounts;
 
+  /// Create a new instance
   const PassComplete({this.resetCounts = false});
 }

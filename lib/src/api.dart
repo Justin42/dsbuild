@@ -1,268 +1,178 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dsbuild/src/writers/file_concatenate_writer.dart';
-import 'package:dsbuild/src/writers/message_writer.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:logging/logging.dart';
 
 import '../concurrency.dart';
-import '../reader.dart';
 import '../transformer.dart' as t;
-import '../writer.dart';
-import 'config.dart';
 import 'conversation.dart';
 import 'descriptor.dart';
 import 'progress.dart';
 import 'registry.dart';
 import 'repository.dart';
-import 'transformers/postprocessor.dart';
-import 'transformers/preprocessor.dart';
 
+/// Build a transformation pipeline from a [DatasetDescriptor]
+///
+/// Provides transparent dispatching to a [WorkerPool]
 class DsBuild {
-  final Config config;
+  /// Stores data during the build process.
   final Repository repository;
+
+  /// Allows registering additional transformers.
   final Registry registry;
+
+  /// Progress events.
   final ProgressBloc progress;
+
+  /// Manage the [WorkerPool]
+  ///
+  /// Available workers are used transparently.
+  /// See [DatasetDescriptor.threads] and [DatasetDescriptor.remote]
+  /// Execution strategy can be changed via [StepDescriptor.sync]
   final WorkerPool workerPool;
 
-  static Logger log = Logger("dsbuild");
+  static final Logger _log = Logger("dsbuild");
 
-  static final Map<String, Preprocessor Function(Map)> builtinPreprocessors = {
-    'HtmlStrip': (config) => t.HtmlStrip(config),
-    'Trim': (config) => t.Trim(config),
-    'RegexReplace': (config) => t.RegexReplace(config),
-    'ExactReplace': (config) => t.ExactReplace(config),
-    'FullMatch': (config) => t.FullMatch(config),
-    'RegexExtract': (config) => t.RegexExtract(config),
-    'Encoding': (config) => t.Encoding(config),
-    'CsvExtract': (config) => t.CsvExtract(config)
-  };
-
-  static final Map<String, Postprocessor Function(Map)> builtinPostprocessors =
-      {
+  /// A map of available builtin transformers. Additional transformers should be registered via the [Registry]
+  static final Map<String, t.ConversationTransformer Function(Map)>
+      builtinTransformers = {
     'Participants': (config) => t.Participants(config),
+    'HtmlStrip': (config) => t.HtmlStrip(config),
     'RenameParticipants': (config) => t.RenameParticipants(config),
-    'Encoding': (config) => t.EncodingPost(config),
+    'Encoding': (config) => t.Encoding(config),
     'Trim': (config) => t.TrimPost(config),
-    'RegexReplace': (config) => t.RegexReplacePost(config),
-    'ExactReplace': (config) => t.ExactReplacePost(config),
+    'RegexReplace': (config) => t.RegexReplace(config),
+    'RegexExtract': (config) => t.RegexOutput(config),
+    'CsvInput': (config) => t.CsvInput(config),
+    'CsvOutput': (config) => t.CsvOutput(config),
+    'ExactReplace': (config) => t.ExactReplace(config),
     'FullMatch': (config) => t.FullMatchPost(config),
+    'FastChatInput': (config) => t.FastChatInput(config),
+    'FastChatOutput': (config) => t.FastChatOutput(config),
+    'FileConcatenate': (config) => t.FileConcatenate(config),
+    'RawOutput': (config) => t.RawOutput(config),
+    'DsBuildOutput': (config) => t.DsBuildOutput(config),
   };
 
-  static final Map<String, Reader Function(Map)> builtinReaders = {
-    'csv': (config) => CsvReader(config),
-    'fastchat': (config) => FastChatReader(config),
-  };
-
-  static final Map<String, Writer Function(Map)> builtinWriters = {
-    'fastchat': (config) => FastChatWriter(config),
-    'RawMessage': (config) => RawMessageWriter(config),
-    'FileConcatenate': (config) => FileConcatenate(config),
-    'dsbuild': (config) => DsBuildWriter(config),
-  };
-
+  /// A [DatasetDescriptor] is required.
   DsBuild(DatasetDescriptor descriptor,
-      {Registry? registry,
-      this.config = const Config(),
-      WorkerPool? workerPool})
+      {Registry? registry, WorkerPool? workerPool})
       : repository = Repository(descriptor),
-        registry = registry ??
-            Registry(builtinReaders, builtinWriters,
-                preprocessors: builtinPreprocessors,
-                postprocessors: builtinPostprocessors),
+        registry = registry ?? Registry(transformers: builtinTransformers),
         progress = ProgressBloc(ProgressState()),
-        workerPool = workerPool ??
-            WorkerPool(
-                messageBatch: descriptor.messageBatch,
-                conversationBatch: descriptor.conversationBatch);
+        workerPool = workerPool ?? WorkerPool();
 
   /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
     List<String> errors = [];
 
     for (PassDescriptor pass in repository.descriptor.passes) {
-      // Verify preprocessors
-      for (StepDescriptor step in pass.preprocessorSteps) {
-        if (!registry.preprocessors.containsKey(step.type)) {
-          errors.add("No preprocessor matching type '${step.type}'");
-        }
-      }
-
-      // Verify readers
-      for (InputDescriptor input in pass.inputs) {
-        if (!registry.readers.containsKey(input.reader.type)) {
-          errors.add("No reader matching type '${input.reader.type}'");
-        }
-      }
-
-      // Verify postprocessors
-      for (OutputDescriptor output in pass.outputs) {
-        for (StepDescriptor step in output.steps) {
-          if (!registry.postprocessors.containsKey(step.type)) {
-            errors.add("No postprocessor matching type '${step.type}'");
-          }
-        }
-      }
-
-      // Verify writers
-      for (OutputDescriptor output in pass.outputs) {
-        if (!registry.writers.containsKey(output.writer.type)) {
-          errors.add("No writer matching type '${output.writer.type}'");
+      // Verify transformers
+      // TODO Query remote workers for capabilities.
+      for (StepDescriptor step in pass.steps) {
+        if (!registry.transformers.containsKey(step.type)) {
+          errors.add("No transformer matching type '${step.type}'");
         }
       }
     }
-
     return errors;
   }
 
   /// Fetch all requirements.
   /// yields an InputDescriptor for each newly satisfied dependency.
-  Stream<InputDescriptor> fetchRequirements() async* {
+  Stream<RequirementDescriptor> fetchRequirements() async* {
     HttpClient client = HttpClient();
     for (PassDescriptor pass in repository.descriptor.passes) {
-      for (InputDescriptor input in pass.inputs) {
-        if (input.source == null) {
-          //log.info("Skipping retrieval for ${input.path} (No source uri)");
+      for (RequirementDescriptor required in pass.required) {
+        if (required.source == null || required.source!.isEmpty) continue;
+        if (await File(required.path).exists()) continue;
+        Uri uri = Uri.parse(required.source!);
+        if (!['http', 'https'].contains(uri.scheme)) {
+          _log.severe("Unhandled URI input: '${required.source}'");
           continue;
         }
-        if (await File(input.path).exists()) {
-          log.fine("Skipping fetch for existing input file '${input.path}'");
+        _log.info("Retrieving ${required.source}");
+        final request = await client.getUrl(uri);
+        final response = await request.close();
+        if (response.statusCode != HttpStatus.ok) {
+          _log.warning(
+              "Failed to retrieve input data. Received http status ${response.statusCode}");
+          await response.drain();
         } else {
-          if (!['http', 'https'].contains(input.source!.scheme)) {
-            log.severe("Unhandled URI input: '${input.source}'");
-            continue;
-          }
-          log.info("Retrieving ${input.source}");
-          final request = await client.getUrl(input.source!);
-          final response = await request.close();
-          if (response.statusCode != HttpStatus.ok) {
-            log.warning(
-                "Failed to retrieve input data. Received http status ${response.statusCode}");
-            await response.drain();
-          } else {
-            File file = await File(input.path).create(recursive: true);
-            await response.pipe(file.openWrite());
-          }
-          yield input;
+          File file = await File(required.path).create(recursive: true);
+          await response.pipe(file.openWrite());
         }
+        yield required;
       }
     }
     client.close();
   }
 
-  /// Perform the specified transformation steps.
-  Stream<MessageEnvelope> transform(
-      Stream<MessageEnvelope> messages, List<StepDescriptor> steps) {
-    Stream<MessageEnvelope> pipeline = messages
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
-      progress.add(const MessageRead());
-      sink.add(data);
-    }));
-
-    if (workerPool.workers.isNotEmpty) {
-      pipeline = workerPool.preprocess(pipeline, steps);
-    } else {
-      for (StepDescriptor step in steps) {
-        pipeline = pipeline.transform(
-            registry.preprocessors[step.type]!.call(step.config).transformer);
+  List<(SyncStrategy, List<StepDescriptor>)> _groupByTarget(
+      Iterable<StepDescriptor> steps) {
+    final List<(SyncStrategy, List<StepDescriptor>)> groups = [];
+    List<StepDescriptor> group = [];
+    for (StepDescriptor step in steps) {
+      if (group.isEmpty || step.sync == group[0].sync) {
+        group.add(step);
+      } else {
+        groups.add((group[0].sync, group));
+        group = [];
+        group.add(step);
       }
     }
-    return pipeline;
-  }
-
-  /// Perform the postprocessing steps defined in the OutputDescriptor
-  Stream<Conversation> postProcess(
-      Stream<Conversation> conversations, OutputDescriptor output) {
-    Stream<Conversation> pipeline = conversations;
-    if (workerPool.workers.isNotEmpty) {
-      pipeline = workerPool.postprocess(pipeline, output.steps);
-    } else {
-      for (StepDescriptor step in output.steps) {
-        pipeline = pipeline.transform(
-            registry.postprocessors[step.type]!.call(step.config).transformer);
-      }
+    if (group.isNotEmpty) {
+      groups.add((group[0].sync, group));
     }
-    return pipeline
-        .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
-      progress.add(const ConversationProcessed());
-      progress.add(MessageProcessed(count: data.messages.length));
-      sink.add(data);
-    }));
+    return groups;
   }
 
-  /// Utility function to concatenate multiple MessageEnvelope streams.
-  Stream<Conversation> concatenateMessages(
-      List<Stream<MessageEnvelope>> data) async* {
-    for (Stream<MessageEnvelope> messageStream in data) {
-      List<Message> convoMessages = [];
-      String convoId = '';
-      StreamTransformer<MessageEnvelope, Conversation>
-          concatenatingTransformer =
-          StreamTransformer.fromHandlers(handleData: (data, sink) {
-        if (data.conversationId != convoId) {
-          if (convoMessages.isNotEmpty) {
-            Conversation conversation = Conversation(convoId.hashCode,
-                messages: convoMessages.toIList(),
-                meta: IMap({'inputId': convoId}));
-            sink.add(conversation);
-            convoMessages = [];
-          }
-          convoId = data.conversationId;
-          convoMessages.add(Message(data.from, data.value));
-        } else {
-          convoMessages.add(Message(data.from, data.value));
+  Stream<List<Conversation>> _dispatchTransform(
+      Stream<List<Conversation>> stream, final List<StepDescriptor> steps) {
+    List<(SyncStrategy, List<StepDescriptor>)> grouped = _groupByTarget(steps);
+    _log.info(grouped);
+    for (var (SyncStrategy sync, List<StepDescriptor> group) in grouped) {
+      for (StepDescriptor step in group) {
+        switch (sync.target) {
+          case SyncTarget.main:
+            stream = stream
+                .transform(registry.transformers[step.type]!.call(step.config));
+            break;
+          case SyncTarget.local:
+            stream = workerPool.transform(stream, group);
+            break;
+          case SyncTarget.remote:
+            throw UnimplementedError();
+          case SyncTarget.auto:
+            throw UnimplementedError();
         }
-      });
-
-      // Progress tracking
-      StreamTransformer<Conversation, Conversation> progressTransformer =
-          StreamTransformer.fromHandlers(handleData: (data, sink) {
-        progress.add(const ConversationRead());
-        sink.add(data);
-      });
-
-      yield* messageStream
-          .transform(concatenatingTransformer)
-          .transform(progressTransformer);
+        // The entire group is passed to workers.
+        if (sync.target == SyncTarget.local ||
+            sync.target == SyncTarget.remote) {
+          break;
+        }
+      }
     }
+    return stream;
   }
 
-  /// Transform each input according to it's InputDescriptor.
-  /// The transformation output is concatenated, in the order of input, into a single Conversation stream
-  Stream<Conversation> transformAll(PassDescriptor pass) async* {
-    List<Stream<MessageEnvelope>> pending = [];
-    for (InputDescriptor inputDescriptor in pass.inputs) {
-      Stream<MessageEnvelope> pipeline =
-          transform(read(inputDescriptor), inputDescriptor.steps);
-      pending.add(pipeline);
+  /// A convenience function to build a new pipeline from a [Repository.descriptor]
+  /// Remote worker groups should be previously registered with the [workerPool]
+  Stream<List<Conversation>> buildPipeline(List<StepDescriptor> steps,
+      {List<Conversation> initialElements = const [],
+      bool enableProgress = true}) async* {
+    Stream<List<Conversation>> stream = Stream.empty();
+
+    stream = _dispatchTransform(stream, steps);
+
+    if (enableProgress) {
+      stream = stream.transform(StreamTransformer.fromHandlers(
+          handleData: (List<Conversation> data, Sink<List<Conversation>> sink) {
+        progress.add(ConversationProcessed(count: data.length));
+        progress.add(MessageProcessed(count: data.messageCount));
+      }));
     }
-    yield* concatenateMessages(pending);
-  }
 
-  /// Write the output conversation stream to the specified output.
-  /// Stream elements are unaltered.
-  Stream<Conversation> write(
-          Stream<Conversation> conversations, OutputDescriptor output) =>
-      registry.writers[output.writer.type]!
-          .call(output.writer.config)
-          .write(conversations, output.path);
-
-  /// Read the input specified by the InputDescriptor.
-  /// yields MessageEnvelope for each message.
-  Stream<MessageEnvelope> read(InputDescriptor inputDescriptor) =>
-      registry.readers[inputDescriptor.reader.type]!
-          .call(inputDescriptor.reader.config)
-          .read(inputDescriptor.path);
-
-  /// Write the conversation stream to all outputs.
-  /// Performs any postprocessing steps for each output.
-  Stream<Conversation> writeAll(
-      PassDescriptor pass, Stream<Conversation> conversations) async* {
-    for (OutputDescriptor output in pass.outputs) {
-      conversations = postProcess(conversations, output);
-      conversations = write(conversations, output);
-    }
-    yield* conversations;
+    yield* stream;
   }
 }

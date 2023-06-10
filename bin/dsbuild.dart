@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:dsbuild/progress.dart';
+import 'package:dsbuild/src/descriptor.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:logging/logging.dart';
@@ -87,19 +87,19 @@ void main(List<String> args) async {
   });
 
   if (dsBuild.repository.descriptor.generateHashes ||
-      dsBuild.repository.descriptor.verifyHashes) {
+      dsBuild.repository.descriptor.verifyRequirements) {
     for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
-      for (int i = 0; i < pass.inputs.length; i++) {
-        final InputDescriptor descriptor = pass.inputs[i];
+      for (int i = 0; i < pass.required.length; i++) {
+        final RequirementDescriptor descriptor = pass.required[i];
         String hash = (await sha512.bind(File(descriptor.path).openRead()).last)
             .toString();
-        if (dsBuild.repository.descriptor.verifyHashes &&
-            descriptor.hash != null) {
-          if (descriptor.hash != hash) {
+        if (dsBuild.repository.descriptor.verifyRequirements &&
+            descriptor.sha512 != null) {
+          if (descriptor.sha512 != hash) {
             throw FileVerificationError(descriptor.path,
-                descriptor.source.toString(), descriptor.hash!, hash);
+                descriptor.source.toString(), descriptor.sha512!, hash);
           }
-        } else if (descriptor.hash != hash) {
+        } else if (descriptor.sha512 != hash) {
           dsBuild.repository.updateInputHash(descriptor.path, hash);
         }
         log.info(
@@ -111,10 +111,11 @@ void main(List<String> args) async {
   for (var (int i, PassDescriptor pass)
       in dsBuild.repository.descriptor.passes.indexed) {
     log.info("Preparing pipeline...");
-    Stream<Conversation> conversations = dsBuild.transformAll(pass);
+    // TODO
+    Stream<List<Conversation>> conversations =
+        dsBuild.buildPipeline(pass.steps);
+    await conversations.drain();
 
-    log.info("Performing transformations...");
-    await dsBuild.writeAll(pass, conversations).last;
     dsBuild.progress.add(i + 1 < dsBuild.repository.descriptor.passes.length
         ? const PassComplete(resetCounts: true)
         : const PassComplete(resetCounts: false));
@@ -128,20 +129,20 @@ void main(List<String> args) async {
   log.info("All output finalized.");
 
   if (dsBuild.repository.descriptor.generateHashes ||
-      dsBuild.repository.descriptor.verifyHashes) {
+      dsBuild.repository.descriptor.verifyArtifacts) {
     log.info("Generating output file hashes.");
     for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
-      for (OutputDescriptor descriptor in pass.outputs) {
-        String hash = (await sha512.bind(File(descriptor.path).openRead()).last)
+      for (ArtifactDescriptor descriptor in pass.artifacts) {
+        String hash = (await sha512.bind(File(descriptor.file).openRead()).last)
             .toString();
-        if (dsBuild.repository.descriptor.verifyHashes &&
-            descriptor.hash != null &&
-            descriptor.hash != hash) {
+        if (dsBuild.repository.descriptor.verifyArtifacts &&
+            descriptor.sha512 != null &&
+            descriptor.sha512 != hash) {
           log.severe(FileVerificationError(
-              descriptor.path, "", descriptor.hash!, hash));
+              descriptor.file, "", descriptor.sha512!, hash));
         } else {
           log.info(
-              "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.path}\nsha512: $hash");
+              "Hash Result:\nFile: ${descriptor.file}\nSource: ${descriptor.file}\nsha512: $hash");
         }
       }
     }

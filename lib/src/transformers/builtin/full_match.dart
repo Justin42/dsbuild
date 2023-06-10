@@ -1,65 +1,28 @@
 import 'dart:async';
 
+import 'package:dsbuild/src/transformers/conversation_transformer.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../conversation.dart';
-import '../postprocessor.dart';
-import '../preprocessor.dart';
 
-enum FullMatchAction { drop }
-
-class FullMatch extends Preprocessor {
-  final IList<String> patterns;
-  final FullMatchAction action;
-  final bool caseSensitive;
-
-  FullMatch(super.config)
-      : patterns = [
-          for (String patterns in config['patterns'])
-            config['caseSensitive'] ?? true ? patterns : patterns.toLowerCase()
-        ].lock,
-        action = FullMatchAction.values.byName(config['action']),
-        caseSensitive = config['caseSensitive'] ?? true;
-
-  @override
-  String get description {
-    switch (action) {
-      case FullMatchAction.drop:
-        return "Drop messages that exactly match the provided pattern.";
-    }
-  }
-
-  @override
-  StreamTransformer<MessageEnvelope, MessageEnvelope> get transformer =>
-      StreamTransformer.fromHandlers(handleData: (data, sink) {
-        switch (action) {
-          case FullMatchAction.drop:
-            bool skip = false;
-            String compareValue =
-                caseSensitive ? data.value : data.value.toLowerCase();
-            for (String pattern in patterns) {
-              switch (action) {
-                case FullMatchAction.drop:
-                  if (compareValue == pattern) {
-                    skip = true;
-                    break;
-                  }
-              }
-              if (skip) break;
-            }
-            if (!skip) {
-              sink.add(data);
-            }
-            break;
-        }
-      });
+/// Action to perform when a match has been found.
+enum FullMatchAction {
+  /// Drop the element
+  drop
 }
 
-class FullMatchPost extends Postprocessor {
+/// Drop messages that exactly matches the provided pattern.
+class FullMatchPost extends ConversationTransformer {
+  /// Patterns to match
   final IList<String> patterns;
+
+  /// Action to perform on match.
   final FullMatchAction action;
+
+  /// Case sensitive matching
   final bool caseSensitive;
 
+  /// Constructs a new instance
   FullMatchPost(super.config)
       : patterns = [
           for (String patterns in config['patterns'])
@@ -77,16 +40,20 @@ class FullMatchPost extends Postprocessor {
   }
 
   @override
-  StreamTransformer<Conversation, Conversation> get transformer =>
-      StreamTransformer.fromHandlers(handleData: (data, sink) {
-        IList<Message> messages;
+  Stream<List<Conversation>> bind(Stream<List<Conversation>> stream) async* {
+    await for (List<Conversation> batch in stream) {
+      IList<Conversation> conversations = batch.lock;
+      for (var (int i, Conversation conversation) in batch.indexed) {
+        bool modified = false;
+        IList<Message> messages = conversation.messages;
         switch (action) {
           case FullMatchAction.drop:
-            messages = data.messages.retainWhere((element) {
+            messages = messages.retainWhere((element) {
               String compareValue =
                   caseSensitive ? element.value : element.value.toLowerCase();
               for (String pattern in patterns) {
                 if (compareValue == pattern) {
+                  modified = true;
                   return false;
                 }
               }
@@ -94,6 +61,12 @@ class FullMatchPost extends Postprocessor {
             });
             break;
         }
-        sink.add(data.copyWith(messages: messages));
-      });
+        if (modified) {
+          conversations = conversations.replace(
+              i, conversation.copyWith(messages: messages));
+        }
+      }
+      yield conversations.unlockLazy;
+    }
+  }
 }

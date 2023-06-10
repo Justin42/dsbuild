@@ -9,19 +9,22 @@ import 'message.dart';
 import 'tasks.dart';
 import 'worker.dart';
 
+/// Channel for interacting with a local worker.
+///
+/// LocalWorker's are intended to be Dart isolates.
+/// This wraps a [ReceivePort], and [SendPort] as well as a [Registry]
 class LocalWorker extends Worker {
-  final ReceivePort rx;
-  final SendPort tx;
+  final ReceivePort _rx;
+  final SendPort _tx;
   final Registry _registry;
 
   @override
   Registry get registry => _registry;
 
-  LocalWorker(this.rx, this.tx, {Registry? registry})
-      : _registry = registry ??
-            Registry(DsBuild.builtinReaders, DsBuild.builtinWriters,
-                preprocessors: DsBuild.builtinPreprocessors,
-                postprocessors: DsBuild.builtinPostprocessors);
+  /// Construct a new worker with the given [ReceivePort] and [SendPort]
+  LocalWorker(this._rx, this._tx, {Registry? registry})
+      : _registry =
+            registry ?? Registry(transformers: DsBuild.builtinTransformers);
 
   @override
   Future<WorkerResponse> process(WorkerTask task) {
@@ -30,12 +33,11 @@ class LocalWorker extends Worker {
 
   @override
   void send(WorkerResponse message) {
-    tx.send(message);
+    _tx.send(message);
   }
 
-  // TODO Allow custom transformers for LocalWorker.
-  //void setupRegistry() {}
-
+  /// Starts a new local worker that waits for incoming tasks.
+  /// A [SendPort] must be provided via the [HandshakeMessage]
   static void start(HandshakeMessage handshake) async {
     Logger.root.level = Level.INFO;
     Logger.root.onRecord.listen((record) {
@@ -46,8 +48,8 @@ class LocalWorker extends Worker {
 
     LocalWorker worker = LocalWorker(ReceivePort(), handshake.tx);
     log.finer("Worker started.");
-    handshake.tx.send(HandshakeMessage(worker.rx.sendPort));
-    await worker.rx.transform(
+    handshake.tx.send(HandshakeMessage(worker._rx.sendPort));
+    await worker._rx.transform(
         StreamTransformer.fromHandlers(handleData: (data, sink) async {
       //WorkerMessage message = data as WorkerMessage;
 

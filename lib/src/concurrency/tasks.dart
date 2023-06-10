@@ -5,44 +5,38 @@ import '../descriptor.dart';
 import 'message.dart';
 import 'worker.dart';
 
+/// Task executed on a worker
 abstract class WorkerTask extends WorkerRequest {
+  /// Construct a new request of type [RequestType.task]
   const WorkerTask() : super(RequestType.task);
 
+  /// Run the task using the [Worker] context.
   Future<WorkerResponse> run(Worker worker);
 }
 
-class PreprocessTask extends WorkerTask {
-  final List<MessageEnvelope> batch;
-  final List<StepDescriptor> steps;
-
-  const PreprocessTask(this.batch, this.steps);
-
-  @override
-  Future<WorkerResponse> run(Worker worker) async {
-    Stream<MessageEnvelope> pipeline = Stream.fromIterable(batch);
-    for (StepDescriptor step in steps) {
-      pipeline = pipeline.transform(worker.registry.preprocessors[step.type]!
-          .call(step.config)
-          .transformer);
-    }
-    return PreprocessResponse(await pipeline.toList());
-  }
-}
-
-class PostprocessTask extends WorkerTask {
+/// WorkerTask to perform a series of transformations
+class TransformTask extends WorkerTask {
+  /// Data
   final List<Conversation> batch;
+
+  /// Transformation steps
   final List<StepDescriptor> steps;
 
-  const PostprocessTask(this.batch, this.steps);
+  /// A task to perform [steps] on [batch]
+  const TransformTask(this.batch, this.steps);
 
   @override
   Future<WorkerResponse> run(Worker worker) async {
-    Stream<Conversation> pipeline = Stream.fromIterable(batch);
+    Stream<List<Conversation>> pipeline = Stream.value(batch);
     for (StepDescriptor step in steps) {
-      pipeline = pipeline.transform(worker.registry.postprocessors[step.type]!
-          .call(step.config)
-          .transformer);
+      pipeline = pipeline.transform(
+          worker.registry.transformers[step.type]!.call(step.config));
     }
-    return PostprocessResponse(await pipeline.toList());
+
+    List<Conversation> transformed = [];
+    await for (List<Conversation> conversation in pipeline) {
+      transformed.addAll(conversation);
+    }
+    return TransformResponse(transformed);
   }
 }

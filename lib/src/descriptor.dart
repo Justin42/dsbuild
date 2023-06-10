@@ -1,38 +1,65 @@
+import 'package:meta/meta.dart';
 import 'package:yaml/yaml.dart';
 
+/// Describes a set of transformations on a dataset.
 class DatasetDescriptor {
+  /// Name
   final String name;
+
+  /// Description
   final String description;
-  final bool generateReadme;
+
+  /// Generate hashes for requirements and artifacts.
   final bool generateHashes;
-  final bool verifyHashes;
-  final int messageBatch;
+
+  /// Verify hashes of required inputs.
+  final bool verifyRequirements;
+
+  /// Verify hashes of artifacts.
+  final bool verifyArtifacts;
+
+  /// Number of conversations per batch.
   final int conversationBatch;
+
+  /// Number of local worker threads.
   final int? threads;
+
+  /// Remote endpoints mapped by group name
+  final Map<String, List<String>> remote;
+
+  /// Transformation passes.
   final List<PassDescriptor> passes;
+
+  /// Clean directory before build.
   final List<String> cleanDirectory;
 
+  /// Create a new descriptor
   const DatasetDescriptor(
       {this.name = 'default',
       this.description = 'No description',
-      this.generateReadme = true,
       this.generateHashes = true,
-      this.verifyHashes = true,
-      this.messageBatch = 5000,
+      this.verifyRequirements = false,
+      this.verifyArtifacts = true,
       this.conversationBatch = 100,
       this.threads,
+      this.remote = const {},
       this.passes = const [],
       this.cleanDirectory = const []});
 
+  /// Create a descriptor from Yaml
   DatasetDescriptor.fromYaml(YamlMap data)
       : name = data['name'] ?? 'default',
         description = data['description'] ?? 'No description',
-        generateReadme = data['build']?['generateReadme'] ?? false,
         generateHashes = data['build']?['generateHashes'] ?? true,
-        verifyHashes = data['build']?['verifyHashes'] ?? true,
-        messageBatch = data['build']?['messageBatch'] ?? 5000,
+        verifyRequirements = data['build']?['verifyRequirements'] ?? false,
+        verifyArtifacts = data['build']?['verifyHashes'] ?? true,
         conversationBatch = data['build']?['conversationBatch'] ?? 100,
-        threads = data['build']?['threads'],
+        threads = data['build']?['concurrency']?['local'],
+        remote = {
+          for (var (String group, List members)
+              in data['build']?['concurrency']?['remote'] ?? const {})
+            group: [for (var member in members) member.toString()]
+        },
         passes = [
           for (var pass in data['passes']) PassDescriptor.fromYaml(pass)
         ],
@@ -41,131 +68,174 @@ class DatasetDescriptor {
         ];
 }
 
+/// Described the transformation steps, required input, and artifacts of a transformation pass.
 class PassDescriptor {
-  final List<InputDescriptor> inputs;
-  final List<OutputDescriptor> outputs;
+  /// The transformation steps in the pass
+  final List<StepDescriptor> steps;
 
-  List<StepDescriptor> get preprocessorSteps {
-    List<StepDescriptor> steps = [];
-    for (InputDescriptor input in inputs) {
-      steps.addAll(input.steps);
-    }
-    return steps;
-  }
+  /// Required input
+  final List<RequirementDescriptor> required;
 
-  List<StepDescriptor> get postprocessorSteps {
-    List<StepDescriptor> steps = [];
-    for (OutputDescriptor output in outputs) {
-      steps.addAll(output.steps);
-    }
-    return steps;
-  }
+  /// Output artifacts
+  final List<ArtifactDescriptor> artifacts;
 
-  const PassDescriptor(this.inputs, this.outputs);
+  /// Create a new descriptor with the specified transformation [steps]
+  const PassDescriptor(this.steps, this.required, this.artifacts);
 
+  /// Create a new instance from a Yaml map
   PassDescriptor.fromYaml(YamlMap data)
-      : inputs = [
-          for (var input in data['input']) InputDescriptor.fromYaml(input)
+      : steps = [for (var step in data['steps']) StepDescriptor.fromYaml(step)],
+        required = [
+          for (var requirement in data['required'])
+            RequirementDescriptor.fromYaml(requirement)
         ],
-        outputs = [
-          for (var output in data['output']) OutputDescriptor.fromYaml(output)
+        artifacts = [
+          for (var artifact in data['artifacts'])
+            ArtifactDescriptor.fromYaml(artifact)
         ];
 }
 
-class ReaderDescriptor {
-  final String type;
-  final Map<dynamic, dynamic> config;
-
-  const ReaderDescriptor(this.type, this.config);
-
-  ReaderDescriptor.fromYaml(YamlMap data)
-      : type = data['type'],
-        config = data['config'] ?? {};
-}
-
-class WriterDescriptor {
-  final String type;
-  final Map<dynamic, dynamic> config;
-
-  const WriterDescriptor(this.type, this.config);
-
-  WriterDescriptor.fromYaml(YamlMap data)
-      : type = data['type'],
-        config = data['config'] ?? {};
-}
-
-class InputDescriptor {
+/// Describes a requirement
+class RequirementDescriptor {
+  /// File path
   final String path;
-  final String description;
-  final Uri? source;
-  final String? hash;
-  final ReaderDescriptor reader;
-  final List<StepDescriptor> steps;
 
-  const InputDescriptor(
-      this.path, this.description, this.source, this.reader, this.steps,
-      {this.hash});
+  /// Source URI
+  final String? source;
 
-  InputDescriptor.fromYaml(YamlMap data)
+  /// SHA512 hash
+  final String? sha512;
+
+  /// Create a new instance
+  const RequirementDescriptor(this.path, this.source, this.sha512);
+
+  /// Create a new instance from a Yaml map
+  RequirementDescriptor.fromYaml(YamlMap data)
       : path = data['path'],
-        description = data['description'] ?? "",
-        source = data['source'] != null ? Uri.parse(data['source']) : null,
-        hash = data['sha512'],
-        reader = (data['reader'] is String)
-            ? ReaderDescriptor(data['reader'], {})
-            : ReaderDescriptor.fromYaml(data['reader']),
-        steps = [
-          if (data['steps'] != null)
-            for (var step in data['steps'])
-              if (step != null) StepDescriptor.fromYaml(step)
-        ];
+        source = data['source'],
+        sha512 = data['sha512'];
 
-  InputDescriptor copyWith(
-      {String? path,
-      String? description,
-      Uri? source,
-      String? hash,
-      ReaderDescriptor? reader,
-      List<StepDescriptor>? steps}) {
-    return InputDescriptor(path ?? this.path, description ?? this.description,
-        source ?? this.source, reader ?? this.reader, steps ?? this.steps,
-        hash: hash ?? this.hash);
-  }
+  /// Create a copy of this instance with the supplied values.
+  RequirementDescriptor copyWith(
+          {String? path, String? source, String? sha512}) =>
+      RequirementDescriptor(
+          path ?? this.path, source ?? this.source, sha512 ?? this.sha512);
 }
 
-class OutputDescriptor {
-  final String path;
-  final String description;
-  final String? hash;
-  final WriterDescriptor writer;
-  final List<StepDescriptor> steps;
+/// Describes an output artifact
+class ArtifactDescriptor {
+  /// File path
+  final String file;
 
-  OutputDescriptor(this.path, this.description, this.writer, this.steps,
-      {this.hash});
+  /// SHA512 hash
+  final String? sha512;
 
-  OutputDescriptor.fromYaml(YamlMap data)
-      : path = data['path'],
-        description = data['description'] ?? 'Output Data',
-        hash = data['sha512'],
-        writer = (data['writer'] is String)
-            ? WriterDescriptor(data['writer'], {})
-            : WriterDescriptor.fromYaml(data['writer']),
-        steps = [
-          if (data['steps'] != null)
-            for (var step in data['steps'])
-              if (step != null) StepDescriptor.fromYaml(step)
-        ];
+  /// Create a new instance
+  const ArtifactDescriptor(this.file, this.sha512);
+
+  /// Create a descriptor from Yaml
+  ArtifactDescriptor.fromYaml(YamlMap data)
+      : file = data['file'],
+        sha512 = data['sha512'];
 }
 
+/// Describes a transformation step.
 class StepDescriptor {
+  /// The type of the [ConversationTransformer]
   final String type;
+
+  /// Description of the step
   final String description;
+
+  final String? _sync;
+
+  /// Configuration passed to the [ConversationTransformer]
   final Map<String, dynamic> config;
 
-  const StepDescriptor(this.type, this.description, this.config);
+  /// Sync target
+  SyncStrategy get sync => SyncStrategy.fromString(_sync);
 
+  /// Create a new instance
+  const StepDescriptor(this.type, this.description,
+      {this.config = const {}, String? sync})
+      : _sync = sync;
+
+  @override
+  String toString() {
+    return type;
+  }
+
+  /// Create a new instance from a Yaml map
   StepDescriptor.fromYaml(YamlMap data)
       : type = data['type'],
-        description = data['description'],
+        description = data['description'] ?? '',
+        _sync = data['sync'],
         config = {if (data['config'] != null) ...data['config']};
+}
+
+/// Strategy for syncing transformation steps.
+@immutable
+class SyncStrategy {
+  /// Target host
+  final SyncTarget target;
+
+  /// Group name for remote targets
+  final String? name;
+
+  /// Auto
+  static final SyncStrategy auto = const SyncStrategy(SyncTarget.auto);
+
+  /// Main thread
+  static final SyncStrategy main = const SyncStrategy(SyncTarget.main);
+
+  /// Local worker
+  static final SyncStrategy local = const SyncStrategy(SyncTarget.local);
+
+  /// Remote worker
+  static final SyncStrategy remote = const SyncStrategy(SyncTarget.remote);
+
+  /// Create a new instance
+  const SyncStrategy(this.target, {this.name});
+
+  /// Create a new instance from a string.
+  factory SyncStrategy.fromString(String? sync) {
+    sync = (sync ?? 'local').toLowerCase();
+    return switch (sync) {
+      'auto' => SyncStrategy.auto,
+      'main' => SyncStrategy.main,
+      'local' => SyncStrategy.local,
+      'remote' => SyncStrategy.remote,
+      _ => SyncStrategy.remote.copyWith(name: sync)
+    };
+  }
+
+  @override
+  String toString() {
+    return name != null ? '${target.name}:$name' : target.name;
+  }
+
+  /// Create a copy of this instance with the supplied values.
+  SyncStrategy copyWith({SyncTarget? target, String? name}) =>
+      SyncStrategy(target ?? this.target, name: name ?? this.name);
+
+  /// Convert the object to a JSON compatible map
+  Map toJson() {
+    return {'target': target.name, 'name': name}
+      ..removeWhere((key, value) => value == null);
+  }
+}
+
+/// Target host
+enum SyncTarget {
+  /// Auto
+  auto,
+
+  /// Main thread
+  main,
+
+  /// Local worker
+  local,
+
+  /// Remote worker
+  remote
 }
