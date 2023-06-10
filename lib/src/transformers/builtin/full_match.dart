@@ -12,7 +12,7 @@ enum FullMatchAction {
 }
 
 /// Drop messages that exactly matches the provided pattern.
-class FullMatchPost extends ConversationTransformer {
+class FullMatch extends ConversationTransformer {
   /// Patterns to match
   final IList<String> patterns;
 
@@ -23,7 +23,7 @@ class FullMatchPost extends ConversationTransformer {
   final bool caseSensitive;
 
   /// Constructs a new instance
-  FullMatchPost(super.config)
+  FullMatch(super.config)
       : patterns = [
           for (String patterns in config['patterns'])
             config['caseSensitive'] ?? true ? patterns : patterns.toLowerCase()

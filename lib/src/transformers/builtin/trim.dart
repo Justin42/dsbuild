@@ -6,9 +6,9 @@ import '../../conversation.dart';
 import '../conversation_transformer.dart';
 
 /// Trim whitespace
-class TrimPost extends ConversationTransformer {
+class Trim extends ConversationTransformer {
   /// Constructs a new instance
-  const TrimPost(super.config);
+  const Trim(super.config);
 
   @override
   String get description => "Trim whitespace and trailing line endings.";
