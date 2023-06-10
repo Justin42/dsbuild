@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../../dsbuild.dart';
 
-/// A [StreamTransformer] that operates on a List<Conversation>
+/// A [StreamTransformer] that operates on a List\<[Conversation]\>
 abstract class ConversationTransformer
     extends StreamTransformerBase<List<Conversation>, List<Conversation>> {
   /// A description of the transformer.
