@@ -1,6 +1,6 @@
 *0.1.0-alpha.5:*
 
-- `ConversationTransformers` injecting new stream elements can now push `MessageRead` and `ConversationRead` events.
+- `ConversationTransformers` can now push `MessageRead` and `ConversationRead` events.
 
 ---
 *0.1.0-alpha.4:*
