@@ -32,7 +32,6 @@ class BuildConfig {
       this.verifyRequirements = false,
       this.verifyArtifacts = true,
       this.conversationBatch = 100,
-      this.sendPackedFiles = false,
       this.threads,
       this.remote = const {},
       this.cleanDirectory = const []});
@@ -43,7 +42,6 @@ class BuildConfig {
         verifyRequirements = data['verifyRequirements'] ?? false,
         verifyArtifacts = data['verifyHashes'] ?? true,
         conversationBatch = data['conversationBatch'] ?? 100,
-        sendPackedFiles = data['sendPackedFiles'] ?? false,
         threads = data['concurrency']?['local'],
         remote = {
           for (var (String group, List members)
