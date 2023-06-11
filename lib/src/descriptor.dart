@@ -17,6 +17,17 @@ class BuildConfig {
   /// Number of conversations per batch.
   final int conversationBatch;
 
+  /// Allow uploading packed files to a local or remote target. Needs to be explicitly enabled.
+  ///
+  /// References to packed files are always included. Worker implementations may choose to attempt to load the file.
+  /// This needs to be explicitly enabled, but it should not be disabled unless the worker can provide the packed file.
+  /// The default local worker implementation does not attempt to acquire packed files from disk.
+  /// Transformer implementations may choose to fail in this scenario.
+  /// The descriptor may be considered invalid if it references packed files that are unavailable on the worker.
+  final bool sendPackedFiles;
+
+  final bool gzipPackedFiles;
+
   /// Number of local worker threads.
   final int? threads;
 
@@ -32,6 +43,8 @@ class BuildConfig {
       this.verifyRequirements = false,
       this.verifyArtifacts = true,
       this.conversationBatch = 100,
+      this.sendPackedFiles = false,
+      this.gzipPackedFiles = false,
       this.threads,
       this.remote = const {},
       this.cleanDirectory = const []});
@@ -42,6 +55,8 @@ class BuildConfig {
         verifyRequirements = data['verifyRequirements'] ?? false,
         verifyArtifacts = data['verifyHashes'] ?? true,
         conversationBatch = data['conversationBatch'] ?? 100,
+        sendPackedFiles = data['sendPackedFiles'] ?? false,
+        gzipPackedFiles = data['gzipPackedFiles'] ?? false,
         threads = data['concurrency']?['local'],
         remote = {
           for (var (String group, List members)
