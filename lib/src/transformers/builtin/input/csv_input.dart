@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:dsbuild/progress.dart';
 
 import '../../../conversation.dart';
 import '../../buffer.dart';
@@ -17,7 +18,7 @@ class CsvInput extends ConversationTransformer {
   final String path;
 
   /// Create a new instance.
-  CsvInput(super.config) : path = config['path'];
+  CsvInput(super.config, {super.progress}) : path = config['path'];
 
   @override
   // TODO: implement description
@@ -66,12 +67,16 @@ class CsvInput extends ConversationTransformer {
             buffer.add(newMessage);
             if (batch.length >= conversationBatch) {
               sink.add(batch);
+              progress?.add(ConversationRead(count: batch.length));
+              progress?.add(MessageRead(count: batch.messageCount));
               batch = [];
             }
           }
         }, handleDone: (sink) {
           batch.addAll(buffer.flushAll());
           sink.add(batch);
+          progress?.add(ConversationRead(count: batch.length));
+          progress?.add(MessageRead(count: batch.messageCount));
           batch = [];
           sink.close();
         }));

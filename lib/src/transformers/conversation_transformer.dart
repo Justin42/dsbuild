@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../dsbuild.dart';
+import '../../progress.dart';
 
 /// A [StreamTransformer] that operates on a List\<[Conversation]\>
 abstract class ConversationTransformer
@@ -18,6 +19,10 @@ abstract class ConversationTransformer
   /// Provided configuration, usually passed from the [DatasetDescriptor]
   final Map config;
 
+  /// Progress
+  final ProgressBloc? progress;
+
   /// Construct a new transformer with the given configuration.
-  const ConversationTransformer(this.config, {this.stepDescription = ''});
+  const ConversationTransformer(this.config,
+      {this.stepDescription = '', this.progress});
 }

@@ -1,6 +1,7 @@
 import 'dart:isolate';
 
 import '../conversation.dart';
+import '../progress.dart';
 
 /// Request type for worker tasks.
 enum RequestType {
@@ -54,6 +55,12 @@ class HandshakeMessage extends WorkerMessage {
 class TransformResponse extends WorkerResponse {
   /// Data
   List<Conversation> batch;
+
+  /// New progress after completion. This is merged with overall progress.
+  ///
+  /// Transformers should **never** report [MessageRead] or [ConversationRead] progress unless they introduce new elements into the stream.
+  /// Transformers generally should not report [MessageProcessed] or [ConversationProcessed] but it is up to the receiver how to interpret these counts.
+  ProgressState? progress;
 
   /// Construct a new response containing the provided conversations.
   TransformResponse(this.batch) : super(ResponseType.transform);

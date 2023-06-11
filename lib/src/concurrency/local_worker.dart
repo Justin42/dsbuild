@@ -9,7 +9,8 @@ import 'message.dart';
 import 'tasks.dart';
 import 'worker.dart';
 
-/// Channel for interacting with a local worker.
+/// Encapsulates the entirety of the local worker context.
+/// [LocalWorker.start] behaves as the main function.
 ///
 /// LocalWorker's are intended to be Dart isolates.
 /// This wraps a [ReceivePort], and [SendPort] as well as a [Registry]
