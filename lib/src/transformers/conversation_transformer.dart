@@ -26,3 +26,7 @@ abstract class ConversationTransformer
   const ConversationTransformer(this.config,
       {this.stepDescription = '', this.progress});
 }
+
+/// A function that takes a [ConversationTransformer.config] Map and returns a [ConversationTransformer]
+typedef ConversationTransformerBuilderFn = ConversationTransformer Function(
+    Map, ProgressBloc? progress);

@@ -7,8 +7,10 @@ import 'package:yaml/yaml.dart';
 void main(List<String> args) async {
   // Load a descriptor. You can also build a descriptor programmatically.
   String descriptorPath = args.isEmpty ? 'dataset.yaml' : args[0];
-  DsBuild dsBuild = DsBuild(DatasetDescriptor.fromYaml(
-      loadYaml(await File(descriptorPath).readAsString())));
+  DsBuild dsBuild = DsBuild(
+      DatasetDescriptor.fromYaml(
+          loadYaml(await File(descriptorPath).readAsString())),
+      ProgressBloc(ProgressState()));
 
   // Listen to progress events
   DateTime lastProgressOutput = DateTime.timestamp();

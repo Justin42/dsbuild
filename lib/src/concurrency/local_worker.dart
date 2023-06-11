@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:isolate';
 
-import 'package:dsbuild/dsbuild.dart';
+import 'package:dsbuild/src/transformers/transformers.dart';
 import 'package:logging/logging.dart';
 
+import '../../progress.dart';
 import '../registry.dart';
 import 'message.dart';
 import 'tasks.dart';
@@ -17,15 +18,19 @@ import 'worker.dart';
 class LocalWorker extends Worker {
   final ReceivePort _rx;
   final SendPort _tx;
-  final Registry _registry;
 
   @override
-  Registry get registry => _registry;
+  final Registry registry;
+
+  @override
+  final ProgressBloc progress;
 
   /// Construct a new worker with the given [ReceivePort] and [SendPort]
   LocalWorker(this._rx, this._tx, {Registry? registry})
-      : _registry =
-            registry ?? Registry(transformers: DsBuild.builtinTransformers);
+      : registry = registry ?? Registry({}),
+        progress = ProgressBloc(ProgressState()) {
+    _setupRegistry();
+  }
 
   @override
   Future<WorkerResponse> process(WorkerTask task) {
@@ -35,6 +40,10 @@ class LocalWorker extends Worker {
   @override
   void send(WorkerResponse message) {
     _tx.send(message);
+  }
+
+  void _setupRegistry() {
+    registry.transformers.addAll(defaultTransformers());
   }
 
   /// Starts a new local worker that waits for incoming tasks.
@@ -52,9 +61,6 @@ class LocalWorker extends Worker {
     handshake.tx.send(HandshakeMessage(worker._rx.sendPort));
     await worker._rx.transform(
         StreamTransformer.fromHandlers(handleData: (data, sink) async {
-      //WorkerMessage message = data as WorkerMessage;
-
-      //log.info("Received task");
       worker.send(await data.run(worker));
       sink.add(data);
     })).last;

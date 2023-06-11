@@ -29,8 +29,8 @@ class TransformTask extends WorkerTask {
   Future<WorkerResponse> run(Worker worker) async {
     Stream<List<Conversation>> pipeline = Stream.value(batch);
     for (StepDescriptor step in steps) {
-      pipeline = pipeline.transform(
-          worker.registry.transformers[step.type]!.call(step.config));
+      pipeline = pipeline.transform(worker.registry.transformers[step.type]!
+          .call(step.config, worker.progress));
     }
 
     List<Conversation> transformed = [];

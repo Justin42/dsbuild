@@ -25,7 +25,6 @@ void main(List<String> args) async {
   DatasetDescriptor descriptor;
   try {
     YamlMap data = loadYaml(await File(descriptorPath).readAsString());
-    //print(data.toString());
     descriptor = DatasetDescriptor.fromYaml(data);
   } on PathNotFoundException catch (ex) {
     log.severe("No descriptor found at $descriptorPath: ${ex.message}");
@@ -46,7 +45,8 @@ void main(List<String> args) async {
   log.info("Removed $deletedFiles files");
 
   // Initialize DsBuild
-  DsBuild dsBuild = DsBuild(descriptor);
+  ProgressBloc progress = ProgressBloc(ProgressState());
+  DsBuild dsBuild = DsBuild(descriptor, progress);
   await dsBuild.workerPool
       .startLocalWorkers(descriptor.threads ?? Platform.numberOfProcessors);
   log.info("${dsBuild.workerPool.workers.length} active workers.");

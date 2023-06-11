@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/src/transformers/transformers.dart';
 import 'package:logging/logging.dart';
 
 import '../concurrency.dart';
-import '../transformer.dart' as t;
 import 'conversation.dart';
 import 'descriptor.dart';
 import 'progress.dart';
@@ -34,33 +34,18 @@ class DsBuild {
   static final Logger _log = Logger("dsbuild");
 
   /// A map of available builtin transformers. Additional transformers should be registered via the [Registry]
-  static final Map<String, t.ConversationTransformer Function(Map)>
-      builtinTransformers = {
-    'Participants': (config) => t.Participants(config),
-    'HtmlStrip': (config) => t.HtmlStrip(config),
-    'RenameParticipants': (config) => t.RenameParticipants(config),
-    'Encoding': (config) => t.Encoding(config),
-    'Trim': (config) => t.Trim(config),
-    'RegexReplace': (config) => t.RegexReplace(config),
-    'RegexExtract': (config) => t.RegexOutput(config),
-    'CsvInput': (config) => t.CsvInput(config),
-    'CsvOutput': (config) => t.CsvOutput(config),
-    'ExactReplace': (config) => t.ExactReplace(config),
-    'FullMatch': (config) => t.FullMatch(config),
-    'FastChatInput': (config) => t.FastChatInput(config),
-    'FastChatOutput': (config) => t.FastChatOutput(config),
-    'FileConcatenate': (config) => t.FileConcatenate(config),
-    'RawOutput': (config) => t.RawOutput(config),
-    'DsBuildOutput': (config) => t.DsBuildOutput(config),
-  };
 
   /// A [DatasetDescriptor] is required.
-  DsBuild(DatasetDescriptor descriptor,
+  DsBuild(DatasetDescriptor descriptor, ProgressBloc? progress,
       {Registry? registry, WorkerPool? workerPool})
       : repository = Repository(descriptor),
-        registry = registry ?? Registry(transformers: builtinTransformers),
+        registry = registry ?? Registry({}),
         progress = ProgressBloc(ProgressState()),
-        workerPool = workerPool ?? WorkerPool();
+        workerPool = workerPool ?? WorkerPool() {
+    if (registry == null) {
+      this.registry.transformers.addAll(defaultTransformers());
+    }
+  }
 
   /// Verify the descriptor is valid and all required transformers are registered.
   List<String> verifyDescriptor() {
@@ -135,8 +120,8 @@ class DsBuild {
       for (StepDescriptor step in group) {
         switch (sync.target) {
           case SyncTarget.main:
-            stream = stream
-                .transform(registry.transformers[step.type]!.call(step.config));
+            stream = stream.transform(
+                registry.transformers[step.type]!.call(step.config, progress));
             break;
           case SyncTarget.local:
             stream = workerPool.transform(stream, group);

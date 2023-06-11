@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:async/async.dart';
 
+import '../../progress.dart';
 import '../registry.dart';
 import 'message.dart';
 import 'tasks.dart';
@@ -29,8 +30,11 @@ class WorkerHandle {
 
 /// A worker.
 abstract class Worker {
-  /// Provides access to the transformers available to this worker.
+  /// Allows tasks to access transformers available to this worker.
   Registry get registry;
+
+  /// Allows tasks to access progress available to this worker.
+  ProgressBloc? get progress;
 
   /// Process an incoming task
   void process(WorkerTask task);
