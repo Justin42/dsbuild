@@ -1,5 +1,4 @@
 import '';
-import 'conversation_transformer.dart';
 
 export './builtin/encoding.dart' show Encoding;
 export './builtin/exact_replace.dart' show ExactReplace;
@@ -9,7 +8,8 @@ export './builtin/output/raw_output.dart' show RawOutput;
 export './builtin/participants.dart' show Participants, RenameParticipants;
 export './builtin/regex_replace.dart' show RegexReplace;
 export './builtin/trim.dart' show Trim;
-export './conversation_transformer.dart' show ConversationTransformer;
+export './conversation_transformer.dart'
+    show ConversationTransformer, ConversationTransformerBuilderFn;
 export 'builtin/input/csv_input.dart' show CsvInput;
 export 'builtin/input/fastchat_input.dart' show FastChatInput;
 export 'builtin/output/csv_output.dart' show CsvOutput;
