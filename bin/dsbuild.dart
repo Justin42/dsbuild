@@ -32,7 +32,7 @@ void main(List<String> args) async {
   }
 
   int deletedFiles = 0;
-  for (String dir in descriptor.cleanDirectory) {
+  for (String dir in descriptor.build.cleanDirectory) {
     if (dir.contains("../") || dir.contains(r"..\")) {
       throw Exception("Clean directory escapes working directory");
     }
@@ -47,8 +47,8 @@ void main(List<String> args) async {
   // Initialize DsBuild
   ProgressBloc progress = ProgressBloc(ProgressState());
   DsBuild dsBuild = DsBuild(descriptor, progress);
-  await dsBuild.workerPool
-      .startLocalWorkers(descriptor.threads ?? Platform.numberOfProcessors);
+  await dsBuild.workerPool.startLocalWorkers(
+      descriptor.build.threads ?? Platform.numberOfProcessors);
   log.info("${dsBuild.workerPool.workers.length} active workers.");
 
   // Progress output
@@ -86,15 +86,13 @@ void main(List<String> args) async {
     log.info("${input.source} retrieved.");
   });
 
-  if (dsBuild.repository.descriptor.generateHashes ||
-      dsBuild.repository.descriptor.verifyRequirements) {
+  if (dsBuild.build.generateHashes || dsBuild.build.verifyRequirements) {
     for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
       for (int i = 0; i < pass.required.length; i++) {
         final RequirementDescriptor descriptor = pass.required[i];
         String hash = (await sha512.bind(File(descriptor.path).openRead()).last)
             .toString();
-        if (dsBuild.repository.descriptor.verifyRequirements &&
-            descriptor.sha512 != null) {
+        if (dsBuild.build.verifyRequirements && descriptor.sha512 != null) {
           if (descriptor.sha512 != hash) {
             throw FileVerificationError(descriptor.path,
                 descriptor.source.toString(), descriptor.sha512!, hash);
@@ -128,14 +126,13 @@ void main(List<String> args) async {
 
   log.info("All output finalized.");
 
-  if (dsBuild.repository.descriptor.generateHashes ||
-      dsBuild.repository.descriptor.verifyArtifacts) {
+  if (dsBuild.build.generateHashes || dsBuild.build.verifyArtifacts) {
     log.info("Generating output file hashes.");
     for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
       for (ArtifactDescriptor descriptor in pass.artifacts) {
         String hash = (await sha512.bind(File(descriptor.file).openRead()).last)
             .toString();
-        if (dsBuild.repository.descriptor.verifyArtifacts &&
+        if (dsBuild.repository.descriptor.build.verifyArtifacts &&
             descriptor.sha512 != null &&
             descriptor.sha512 != hash) {
           log.severe(FileVerificationError(

@@ -24,6 +24,9 @@ class DsBuild {
   /// Progress events.
   final ProgressBloc progress;
 
+  /// Convenience getter for the build configuration.
+  BuildConfig get build => repository.descriptor.build;
+
   /// Manage the [WorkerPool]
   ///
   /// Available workers are used transparently.

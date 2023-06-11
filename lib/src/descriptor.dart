@@ -1,14 +1,10 @@
 import 'package:meta/meta.dart';
 import 'package:yaml/yaml.dart';
 
-/// Describes a set of transformations on a dataset.
-class DatasetDescriptor {
-  /// Name
-  final String name;
-
-  /// Description
-  final String description;
-
+/// Configuration used exclusively (and optionally) by build script implementations.
+///
+/// This is never sent to local or remote workers.
+class BuildConfig {
   /// Generate hashes for requirements and artifacts.
   final bool generateHashes;
 
@@ -27,44 +23,66 @@ class DatasetDescriptor {
   /// Remote endpoints mapped by group name
   final Map<String, List<String>> remote;
 
-  /// Transformation passes.
-  final List<PassDescriptor> passes;
-
   /// Clean directory before build.
   final List<String> cleanDirectory;
+
+  /// Create a new instance
+  const BuildConfig(
+      {this.generateHashes = true,
+      this.verifyRequirements = false,
+      this.verifyArtifacts = true,
+      this.conversationBatch = 100,
+      this.sendPackedFiles = false,
+      this.threads,
+      this.remote = const {},
+      this.cleanDirectory = const []});
+
+  /// Create a new instance from Yaml
+  BuildConfig.fromYaml(YamlMap data)
+      : generateHashes = data['generateHashes'] ?? true,
+        verifyRequirements = data['verifyRequirements'] ?? false,
+        verifyArtifacts = data['verifyHashes'] ?? true,
+        conversationBatch = data['conversationBatch'] ?? 100,
+        sendPackedFiles = data['sendPackedFiles'] ?? false,
+        threads = data['concurrency']?['local'],
+        remote = {
+          for (var (String group, List members)
+              in data['concurrency']?['remote'] ?? const {})
+            group: [for (var member in members) member.toString()]
+        },
+        cleanDirectory = [
+          for (var dir in data['cleanDirectory'] ?? []) dir.toString()
+        ];
+}
+
+/// Describes a set of transformations on a dataset.
+class DatasetDescriptor {
+  /// Name
+  final String name;
+
+  /// Description
+  final String description;
+
+  /// Build configuration.
+  final BuildConfig build;
+
+  /// Transformation passes.
+  final List<PassDescriptor> passes;
 
   /// Create a new descriptor
   const DatasetDescriptor(
       {this.name = 'default',
       this.description = 'No description',
-      this.generateHashes = true,
-      this.verifyRequirements = false,
-      this.verifyArtifacts = true,
-      this.conversationBatch = 100,
-      this.threads,
-      this.remote = const {},
-      this.passes = const [],
-      this.cleanDirectory = const []});
+      this.build = const BuildConfig(),
+      this.passes = const []});
 
   /// Create a descriptor from Yaml
   DatasetDescriptor.fromYaml(YamlMap data)
       : name = data['name'] ?? 'default',
         description = data['description'] ?? 'No description',
-        generateHashes = data['build']?['generateHashes'] ?? true,
-        verifyRequirements = data['build']?['verifyRequirements'] ?? false,
-        verifyArtifacts = data['build']?['verifyHashes'] ?? true,
-        conversationBatch = data['build']?['conversationBatch'] ?? 100,
-        threads = data['build']?['concurrency']?['local'],
-        remote = {
-          for (var (String group, List members)
-              in data['build']?['concurrency']?['remote'] ?? const {})
-            group: [for (var member in members) member.toString()]
-        },
+        build = BuildConfig.fromYaml(data['build']),
         passes = [
           for (var pass in data['passes']) PassDescriptor.fromYaml(pass)
-        ],
-        cleanDirectory = [
-          for (var dir in data['build']?['cleanDirectory']) dir.toString()
         ];
 }
 
