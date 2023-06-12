@@ -45,7 +45,8 @@ class FileConcatenate extends ConversationTransformer {
         .transform(StreamTransformer.fromHandlers(handleData: (data, sink) {
       sink.add(data);
     }, handleDone: (sink) async {
-      IOSink output = File(path).openWrite(mode: FileMode.append);
+      IOSink output = (await File(path).create(recursive: true))
+          .openWrite(mode: FileMode.append);
       int count = 0;
       for (Glob glob in globs) {
         for (FileSystemEntity entity
