@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dsbuild/src/transformers/packed_data.dart';
 import 'package:dsbuild/src/transformers/transformers.dart';
 import 'package:logging/logging.dart';
 
@@ -41,7 +42,7 @@ class DsBuild {
   /// A [DatasetDescriptor] is required.
   DsBuild(DatasetDescriptor descriptor, ProgressBloc? progress,
       {Registry? registry, WorkerPool? workerPool})
-      : repository = Repository(descriptor),
+      : repository = Repository(descriptor, PackedDataCache()),
         registry = registry ?? Registry({}),
         progress = ProgressBloc(ProgressState()),
         workerPool = workerPool ?? WorkerPool() {
@@ -119,6 +120,7 @@ class DsBuild {
       Stream<List<Conversation>> stream, final List<StepDescriptor> steps) {
     List<(SyncStrategy, List<StepDescriptor>)> grouped = _groupByTarget(steps);
     _log.info(grouped);
+
     for (var (SyncStrategy sync, List<StepDescriptor> group) in grouped) {
       for (StepDescriptor step in group) {
         switch (sync.target) {

@@ -26,7 +26,11 @@ class BuildConfig {
   /// The descriptor may be considered invalid if it references packed files that are unavailable on the worker.
   final bool sendPackedFiles;
 
-  final bool gzipPackedFiles;
+  /// Enable gzip for remote workers. Ignored if sendPackedFiles is false.
+  final bool gzipRemotePackedFiles;
+
+  /// Enable gzip for local workers. Ignored if sendPackedFiles is false.
+  final bool gzipLocalPackedFiles;
 
   /// Number of local worker threads.
   final int? threads;
@@ -44,7 +48,8 @@ class BuildConfig {
       this.verifyArtifacts = true,
       this.conversationBatch = 100,
       this.sendPackedFiles = false,
-      this.gzipPackedFiles = false,
+      this.gzipRemotePackedFiles = true,
+      this.gzipLocalPackedFiles = false,
       this.threads,
       this.remote = const {},
       this.cleanDirectory = const []});
@@ -56,7 +61,8 @@ class BuildConfig {
         verifyArtifacts = data['verifyHashes'] ?? true,
         conversationBatch = data['conversationBatch'] ?? 100,
         sendPackedFiles = data['sendPackedFiles'] ?? false,
-        gzipPackedFiles = data['gzipPackedFiles'] ?? false,
+        gzipRemotePackedFiles = data['gzipRemotePackedFiles'] ?? true,
+        gzipLocalPackedFiles = data['gzipLocalPackedFiles'] ?? false,
         threads = data['concurrency']?['local'],
         remote = {
           for (var (String group, List members)
@@ -178,6 +184,9 @@ class StepDescriptor {
   /// Description of the step
   final String description;
 
+  /// Files to be included with the step
+  final List<String> pack;
+
   final String? _sync;
 
   /// Configuration passed to the [ConversationTransformer]
@@ -188,7 +197,7 @@ class StepDescriptor {
 
   /// Create a new instance
   const StepDescriptor(this.type, this.description,
-      {this.config = const {}, String? sync})
+      {this.config = const {}, String? sync, this.pack = const []})
       : _sync = sync;
 
   @override
@@ -200,6 +209,7 @@ class StepDescriptor {
   StepDescriptor.fromYaml(YamlMap data)
       : type = data['type'],
         description = data['description'] ?? '',
+        pack = [for (String name in data['pack'] ?? []) name.toString()],
         _sync = data['sync'],
         config = {if (data['config'] != null) ...data['config']};
 }
