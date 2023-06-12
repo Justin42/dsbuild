@@ -16,6 +16,9 @@ class FileConcatenate extends ConversationTransformer {
   /// Source files
   final List<Glob> globs;
 
+  /// If append is false the file will be overwritten.
+  final bool append;
+
   /// Skip duplicate lines
   final bool ignoreDuplicateLines;
 
@@ -31,6 +34,7 @@ class FileConcatenate extends ConversationTransformer {
   /// Create a new instance
   FileConcatenate(super.config)
       : globs = [for (var file in config['files'] ?? []) Glob(file.toString())],
+        append = config['append'] ?? false,
         ignoreDuplicateLines = config['ignoreDuplicateLines'] ?? false,
         delete = config['delete'] ?? false,
         duplicates = HashSet(),
@@ -46,7 +50,7 @@ class FileConcatenate extends ConversationTransformer {
       sink.add(data);
     }, handleDone: (sink) async {
       IOSink output = (await File(path).create(recursive: true))
-          .openWrite(mode: FileMode.append);
+          .openWrite(mode: append ? FileMode.append : FileMode.write);
       int count = 0;
       for (Glob glob in globs) {
         for (FileSystemEntity entity
