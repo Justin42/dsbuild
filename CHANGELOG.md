@@ -1,5 +1,6 @@
 *0.1.0-alpha.5:*
 
+- Required binary data can now be pushed to workers.
 - `ConversationTransformers` can now push `MessageRead` and `ConversationRead` events.
 
 ---

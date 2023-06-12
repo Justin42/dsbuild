@@ -139,8 +139,13 @@ class DsBuild {
       }
 
       // Create a new PackedDataCache containing the data required for this group of steps.
-      PackedDataCache packedData = await group.collectPackedData(
-          readFromFilesystem: true, gzip: shouldGzip);
+      PackedDataCache packedData;
+      if (build.sendPackedFiles) {
+        packedData = await group.collectPackedData(
+            readFromFilesystem: true, gzip: shouldGzip);
+      } else {
+        packedData = PackedDataCache();
+      }
 
       for (StepDescriptor step in group) {
         switch (sync.target) {
@@ -174,6 +179,9 @@ class DsBuild {
       bool enableProgress = true}) async* {
     Stream<List<Conversation>> stream = Stream.empty();
 
+    if (!build.sendPackedFiles) {
+      _log.warning("build.sendPackedFiles is 'false'");
+    }
     stream = _dispatchTransform(stream, steps);
 
     if (enableProgress) {

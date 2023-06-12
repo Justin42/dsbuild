@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:dsbuild/cache.dart';
+
 import '../conversation.dart';
 import '../descriptor.dart';
 import 'message.dart';
@@ -22,15 +24,18 @@ class TransformTask extends WorkerTask {
   /// Transformation steps
   final List<StepDescriptor> steps;
 
+  /// Cache containing binary data required for these steps.
+  final PackedDataCache? cache;
+
   /// A task to perform [steps] on [batch]
-  const TransformTask(this.batch, this.steps);
+  const TransformTask(this.batch, this.steps, {this.cache});
 
   @override
   Future<WorkerResponse> run(Worker worker) async {
     Stream<List<Conversation>> pipeline = Stream.value(batch);
     for (StepDescriptor step in steps) {
       pipeline = pipeline.transform(worker.registry.transformers[step.type]!
-          .call(step.config, worker.progress));
+          .call(step.config, worker.progress, cache));
     }
 
     List<Conversation> transformed = [];

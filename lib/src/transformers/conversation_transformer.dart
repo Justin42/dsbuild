@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../dsbuild.dart';
 import '../../progress.dart';
+import '../packed_data.dart';
 
 /// A [StreamTransformer] that operates on a List\<[Conversation]\>
 abstract class ConversationTransformer
@@ -22,11 +23,14 @@ abstract class ConversationTransformer
   /// Progress
   final ProgressBloc? progress;
 
+  /// Cache
+  final PackedDataCache? cache;
+
   /// Construct a new transformer with the given configuration.
   const ConversationTransformer(this.config,
-      {this.stepDescription = '', this.progress});
+      {this.stepDescription = '', this.progress, this.cache});
 }
 
 /// A function that takes a [ConversationTransformer.config] Map and returns a [ConversationTransformer]
 typedef ConversationTransformerBuilderFn = ConversationTransformer Function(
-    Map, ProgressBloc? progress);
+    Map, ProgressBloc? progress, PackedDataCache? cache);

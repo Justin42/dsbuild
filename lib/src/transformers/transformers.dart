@@ -21,21 +21,24 @@ export 'builtin/output/regex_output.dart' show RegexOutput;
 /// Maps builder names to their builder functions.
 Map<String, ConversationTransformerBuilderFn> defaultTransformers() {
   return {
-    'Participants': (config, progress) => Participants(config),
-    'HtmlStrip': (config, progress) => HtmlStrip(config),
-    'RenameParticipants': (config, progress) => RenameParticipants(config),
-    'Encoding': (config, progress) => Encoding(config),
-    'Trim': (config, progress) => Trim(config),
-    'RegexReplace': (config, progress) => RegexReplace(config),
-    'RegexExtract': (config, progress) => RegexOutput(config),
-    'CsvInput': (config, progress) => CsvInput(config, progress: progress),
-    'CsvOutput': (config, progress) => CsvOutput(config),
-    'ExactReplace': (config, progress) => ExactReplace(config),
-    'FullMatch': (config, progress) => FullMatch(config),
-    'FastChatInput': (config, progress) => FastChatInput(config),
-    'FastChatOutput': (config, progress) => FastChatOutput(config),
-    'FileConcatenate': (config, progress) => FileConcatenate(config),
-    'RawOutput': (config, progress) => RawOutput(config),
-    'DsBuildOutput': (config, progress) => DsBuildOutput(config),
+    'Participants': (config, progress, cache) => Participants(config),
+    'HtmlStrip': (config, progress, cache) => HtmlStrip(config),
+    'RenameParticipants': (config, progress, cache) =>
+        RenameParticipants(config),
+    'Encoding': (config, progress, cache) => Encoding(config),
+    'Trim': (config, progress, cache) => Trim(config),
+    'RegexReplace': (config, progress, cache) => RegexReplace(config),
+    'RegexExtract': (config, progress, cache) => RegexOutput(config),
+    'CsvInput': (config, progress, cache) =>
+        CsvInput(config, progress: progress),
+    'CsvOutput': (config, progress, cache) => CsvOutput(config),
+    'ExactReplace': (config, progress, cache) =>
+        ExactReplace(config, cache: cache),
+    'FullMatch': (config, progress, cache) => FullMatch(config),
+    'FastChatInput': (config, progress, cache) => FastChatInput(config),
+    'FastChatOutput': (config, progress, cache) => FastChatOutput(config),
+    'FileConcatenate': (config, progress, cache) => FileConcatenate(config),
+    'RawOutput': (config, progress, cache) => RawOutput(config),
+    'DsBuildOutput': (config, progress, cache) => DsBuildOutput(config),
   };
 }

@@ -1,6 +1,7 @@
 import 'dart:isolate';
 
 import 'package:async/async.dart';
+import 'package:dsbuild/cache.dart';
 import 'package:dsbuild/dsbuild.dart';
 import 'package:logging/logging.dart';
 
@@ -56,11 +57,11 @@ class WorkerPool {
   }
 
   /// Dispatch the stream to local workers and transform using the provided [steps]
-  Stream<List<Conversation>> transform(
-      Stream<List<Conversation>> data, List<StepDescriptor> steps) async* {
+  Stream<List<Conversation>> transform(Stream<List<Conversation>> data,
+      List<StepDescriptor> steps, PackedDataCache? cache) async* {
     yield* data
-        .map((data) =>
-            run(TransformTask(data, steps)).then((value) => switch (value) {
+        .map((data) => run(TransformTask(data, steps, cache: cache))
+            .then((value) => switch (value) {
                   TransformResponse result => result.batch,
                 }))
         .transform(SynchronizingTransformer(workers.length));

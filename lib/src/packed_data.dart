@@ -31,7 +31,11 @@ class PackedDataCache {
   bool containsKey(String key) => _data.containsKey(key);
 
   /// Associates the key with the given value.
-  void operator []=(String key, PackedData data) => _data[key] = data;
+  void operator []=(String key, PackedData data) {
+    _log.info(
+        "Cached '$key' => ${data.data.length} bytes ${data.header.gzipped ? "(gzipped)" : ""}");
+    _data[key] = data;
+  }
 
   /// The value for the given key, or null if key is not in the map.
   PackedData? operator [](String? key) => _data[key];
@@ -100,6 +104,11 @@ abstract class PackedData {
 
   /// Create a new instance with the provided header and data.
   const PackedData(this.header, this.data);
+
+  /// Unpack the data
+  Uint8List unpack() {
+    return data;
+  }
 }
 
 /// Raw binary data
@@ -124,5 +133,10 @@ class GzipData extends PackedData with Inflatable {
   @override
   List<int> inflate() {
     return gzip.decoder.convert(data);
+  }
+
+  @override
+  Uint8List unpack() {
+    return Uint8List.fromList(inflate());
   }
 }
