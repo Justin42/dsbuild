@@ -6,3 +6,5 @@ data
 dataset*.yaml
 out
 doc
+# Generated data
+pack/generated

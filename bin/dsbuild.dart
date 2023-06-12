@@ -130,6 +130,10 @@ void main(List<String> args) async {
     log.info("Generating output file hashes.");
     for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
       for (ArtifactDescriptor descriptor in pass.artifacts) {
+        if (!await File(descriptor.file).exists()) {
+          log.warning("Artifact '${descriptor.file}' does not exist");
+          continue;
+        }
         String hash = (await sha512.bind(File(descriptor.file).openRead()).last)
             .toString();
         if (dsBuild.repository.descriptor.build.verifyArtifacts &&
