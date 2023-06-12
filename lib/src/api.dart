@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dsbuild/src/transformers/packed_data.dart';
-import 'package:dsbuild/src/transformers/transformers.dart';
 import 'package:logging/logging.dart';
 
 import '../concurrency.dart';
+import '../transformer.dart';
 import 'conversation.dart';
 import 'descriptor.dart';
+import 'descriptor_extensions.dart';
+import 'packed_data.dart';
 import 'progress.dart';
 import 'registry.dart';
 import 'repository.dart';
@@ -117,19 +118,38 @@ class DsBuild {
   }
 
   Stream<List<Conversation>> _dispatchTransform(
-      Stream<List<Conversation>> stream, final List<StepDescriptor> steps) {
+      Stream<List<Conversation>> stream,
+      final List<StepDescriptor> steps) async* {
     List<(SyncStrategy, List<StepDescriptor>)> grouped = _groupByTarget(steps);
     _log.info(grouped);
 
+    PackedDataCache cache = PackedDataCache();
+
     for (var (SyncStrategy sync, List<StepDescriptor> group) in grouped) {
+      // Check whether we should gzip the packed data for this group of steps.
+      bool shouldGzip = false;
+      if (build.gzipLocalPackedFiles &&
+          (sync.target == SyncTarget.local || sync.target == SyncTarget.main)) {
+        shouldGzip = true;
+      }
+      if (build.gzipRemotePackedFiles &&
+          (sync.target == SyncTarget.remote ||
+              sync.target == SyncTarget.remote)) {
+        shouldGzip = true;
+      }
+
+      // Create a new PackedDataCache containing the data required for this group of steps.
+      PackedDataCache packedData = await group.collectPackedData(
+          readFromFilesystem: true, gzip: shouldGzip);
+
       for (StepDescriptor step in group) {
         switch (sync.target) {
           case SyncTarget.main:
-            stream = stream.transform(
-                registry.transformers[step.type]!.call(step.config, progress));
+            stream = stream.transform(registry.transformers[step.type]!
+                .call(step.config, progress, packedData));
             break;
           case SyncTarget.local:
-            stream = workerPool.transform(stream, group);
+            stream = workerPool.transform(stream, group, packedData);
             break;
           case SyncTarget.remote:
             throw UnimplementedError();
@@ -142,8 +162,9 @@ class DsBuild {
           break;
         }
       }
+      cache.addAll(packedData);
     }
-    return stream;
+    yield* stream;
   }
 
   /// A convenience function to build a new pipeline from a [Repository.descriptor]

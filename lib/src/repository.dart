@@ -1,4 +1,4 @@
-import 'package:dsbuild/src/transformers/packed_data.dart';
+import 'package:dsbuild/src/packed_data.dart';
 
 import 'descriptor.dart';
 
