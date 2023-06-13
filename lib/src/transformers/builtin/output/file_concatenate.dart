@@ -22,6 +22,9 @@ class FileConcatenate extends ConversationTransformer {
   /// Skip duplicate lines
   final bool ignoreDuplicateLines;
 
+  /// Eol when cocatenating as lines
+  final String eol;
+
   /// Delete source files
   final bool delete;
 
@@ -36,6 +39,7 @@ class FileConcatenate extends ConversationTransformer {
       : globs = [for (var file in config['files'] ?? []) Glob(file.toString())],
         append = config['append'] ?? false,
         ignoreDuplicateLines = config['ignoreDuplicateLines'] ?? false,
+        eol = config['eol'] ?? '\n',
         delete = config['delete'] ?? false,
         duplicates = HashSet(),
         path = config['path'];
@@ -59,7 +63,8 @@ class FileConcatenate extends ConversationTransformer {
             if (ignoreDuplicateLines) {
               for (String line in await entity.readAsLines()) {
                 if (duplicates.add(line)) {
-                  output.writeln(line);
+                  output.write(line);
+                  output.write(eol);
                 }
               }
             } else {
