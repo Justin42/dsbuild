@@ -43,7 +43,9 @@ class ExactReplace extends ConversationTransformer {
       }
       /// Unpack, read as CSV, add to replacements list.
       List<List<String>> csvData = CsvToListConverter().convert(String.fromCharCodes(data.unpack()));
-      newReplacements.addAll(csvData.map((List<String> e) => (match: e[0].toString().replaceAll(r"\n", "\n"), replace: e.length > 1 ? e[1].toString().replaceAll(r"\n", "\n") : '')));
+      newReplacements.addAll(csvData.map((List<String> e) =>
+        (match: e[0].toString().replaceAll(r"\n", "\n"), replace: e.length > 1 ? e[1].toString().replaceAll(r"\n", "\n") : '')
+      ));
     }
     return newReplacements.lockUnsafe;
   }
