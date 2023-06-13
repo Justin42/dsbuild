@@ -78,30 +78,32 @@ class CsvOutput extends ConversationTransformer {
               ? FileMode.writeOnly
               : FileMode.append);
       if (newFile && header.isNotEmpty) {
-        ioSink?.writeln(csv.convert([header]));
+        String? row = csv.convertSingleRow(sb, header);
+        ioSink?.write('$row\r\n');
+        sb.clear();
       }
     }
 
     await for (List<Conversation> conversations in stream) {
       for (Conversation conversation in conversations) {
         for (Message message in conversation.messages) {
-          List<String> newRow = List.filled(fields.length, '', growable: false);
-          for (var (int col, Field field) in fields.indexed) {
-            newRow[col] = switch (field) {
+          List<String> newRow = [];
+          for (Field field in fields) {
+            newRow.add(switch (field) {
               Field.conversation => conversation.id.toString(),
               Field.from => message.from,
               Field.value => message.value,
               Field.hash => message.hashCode.toString(),
-            };
+            });
           }
-          String? csvRow = csv.convertSingleRow(sb, newRow);
-          if (csvRow != null && csvRow.isNotEmpty) {
+          String? row = csv.convertSingleRow(sb, newRow);
+          if (row != null && row.isNotEmpty) {
             if (ignoreDuplicates) {
-              if (duplicates.add(csvRow)) {
-                ioSink?.writeln(csvRow);
+              if (duplicates.add(row)) {
+                ioSink?.write('$row\r\n');
               }
             } else {
-              ioSink?.writeln(csvRow);
+              ioSink?.write('$row\r\n');
             }
             sb.clear();
           }
