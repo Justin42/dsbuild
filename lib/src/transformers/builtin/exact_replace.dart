@@ -41,7 +41,7 @@ class ExactReplace extends ConversationTransformer {
         _log.warning("Unable to load packed replacements list '$key'");
         continue;
       }
-      /// Unpack, read as CSV, add to replacements list.
+      // Unpack, read as CSV, add to replacements list.
       List<List<String>> csvData = CsvToListConverter().convert(String.fromCharCodes(data.unpack()));
       newReplacements.addAll(csvData.map((List<String> e) =>
         (match: e[0].toString().replaceAll(r"\n", "\n"), replace: e.length > 1 ? e[1].toString().replaceAll(r"\n", "\n") : '')
