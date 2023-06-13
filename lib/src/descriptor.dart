@@ -127,7 +127,7 @@ class PassDescriptor {
             RequirementDescriptor.fromYaml(requirement)
         ],
         artifacts = [
-          for (var artifact in data['artifacts'])
+          for (var artifact in data['artifacts'] ?? [])
             ArtifactDescriptor.fromYaml(artifact)
         ];
 }
