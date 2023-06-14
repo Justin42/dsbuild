@@ -41,6 +41,7 @@ class StatsCountOccurrences extends ConversationTransformer {
   /// Whether the pattern should be case sensitive. This is ignored if [regex] is true.
   final bool caseSensitive;
 
+  /// The minimum number of occurrences required to be included in the output
   final int min;
 
   /// Create a new instance

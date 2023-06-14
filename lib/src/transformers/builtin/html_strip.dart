@@ -3,12 +3,9 @@ import 'dart:async';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
-import 'package:logging/logging.dart';
 
 import '../../conversation.dart';
 import '../conversation_transformer.dart';
-
-Logger _log = Logger("dsbuild/transformers");
 
 /// Strip HTML
 class HtmlStrip extends ConversationTransformer {
