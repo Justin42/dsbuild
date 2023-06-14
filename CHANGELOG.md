@@ -6,6 +6,7 @@
 - Allow FileConcatenate to create new directories and overwrite existing files.
 - ExactReplace can now use external csv data (using the new `PackedDataCache`)
 - Implement new transformers `StatsCountOccurrences` and `StatsAddColMerge`
+- HtmlStrip can now strip elements by dom query
 
 ---
 *0.1.0-alpha.4:*

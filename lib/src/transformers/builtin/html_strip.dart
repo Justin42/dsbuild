@@ -21,8 +21,8 @@ class HtmlStrip extends ConversationTransformer {
   /// DOM query for selecting anchors.
   final String anchorSelector;
 
-  /// Anchor texts stripped.
-  int strippedAnchors = 0;
+  /// List of DOM selectors to be stripped
+  final IList<String> stripDom;
 
   /// Constructs a new instance
   HtmlStrip(super.config)
@@ -35,7 +35,9 @@ class HtmlStrip extends ConversationTransformer {
                       : pattern.toLowerCase()
               ])
             : const IListConst([]),
-        anchorSelector = config['anchorSelector'] ?? "a, img";
+        anchorSelector = config['anchorSelector'] ?? "a, img",
+        stripDom = [for (String pattern in config['stripDom'] ?? []) pattern]
+            .lockUnsafe;
 
   @override
   String get description => "Strip HTML";
@@ -50,6 +52,7 @@ class HtmlStrip extends ConversationTransformer {
           DocumentFragment fragment = parseFragment(message.value);
           if (stripAnchorPatterns.isNotEmpty) {
             List<Element> removals = [];
+            // Remove anchor texts matching specific patterns
             for (Element child in fragment.querySelectorAll(anchorSelector)) {
               for (Pattern pattern in stripAnchorPatterns) {
                 if ((caseSensitive && child.text.contains(pattern)) ||
@@ -60,7 +63,14 @@ class HtmlStrip extends ConversationTransformer {
                 }
               }
             }
-            strippedAnchors += removals.length;
+
+            // Remove nodes matching dom query
+            for (String query in stripDom) {
+              for (Element child in fragment.querySelectorAll(query)) {
+                removals.add(child);
+              }
+            }
+
             for (Node node in removals) {
               node.remove();
             }
@@ -73,6 +83,5 @@ class HtmlStrip extends ConversationTransformer {
       }
       yield conversations.unlockLazy;
     }
-    _log.finer("$runtimeType stripped $strippedAnchors anchor texts.");
   }
 }
