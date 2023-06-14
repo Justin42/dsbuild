@@ -17,6 +17,7 @@ export 'builtin/output/dsbuild_output.dart' show DsBuildOutput;
 export 'builtin/output/fastchat_output.dart' show FastChatOutput;
 export 'builtin/output/file_concatenate.dart' show FileConcatenate;
 export 'builtin/output/regex_output.dart' show RegexOutput;
+export 'builtin/stats/count_occurrences.dart' show StatsCountOccurrences;
 
 /// Maps builder names to their builder functions.
 Map<String, ConversationTransformerBuilderFn> defaultTransformers() {
@@ -40,5 +41,7 @@ Map<String, ConversationTransformerBuilderFn> defaultTransformers() {
     'FileConcatenate': (config, progress, cache) => FileConcatenate(config),
     'RawOutput': (config, progress, cache) => RawOutput(config),
     'DsBuildOutput': (config, progress, cache) => DsBuildOutput(config),
+    'StatsCountOccurrences': (config, progress, cache) =>
+        StatsCountOccurrences(config, cache: cache)
   };
 }
