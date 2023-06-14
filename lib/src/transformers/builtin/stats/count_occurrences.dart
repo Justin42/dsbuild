@@ -56,7 +56,7 @@ class StatsCountOccurrences extends ConversationTransformer {
             .replaceAll('%worker%', Isolate.current.debugName ?? '0')),
         append = config['append'] ?? false,
         patternCol = config['patternCol'] ?? 0,
-        countCol = config['countCol'] ?? 2,
+        countCol = config['countCol'] ?? 1,
         regex = config['regex'] ?? false,
         caseSensitive = bool.tryParse(config['caseSensitive'] ?? '') ?? true,
         min = config['min'] ?? 0,
