@@ -5,6 +5,7 @@
 - Fix unhandled exception on missing artifact (now a warning)
 - Allow FileConcatenate to create new directories and overwrite existing files.
 - ExactReplace can now use external csv data (using the new `PackedDataCache`)
+- Implement new transformers `StatsCountOccurrences` and `StatsAddColMerge`
 
 ---
 *0.1.0-alpha.4:*

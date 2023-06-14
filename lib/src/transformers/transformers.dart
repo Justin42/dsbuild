@@ -17,6 +17,7 @@ export 'builtin/output/dsbuild_output.dart' show DsBuildOutput;
 export 'builtin/output/fastchat_output.dart' show FastChatOutput;
 export 'builtin/output/file_concatenate.dart' show FileConcatenate;
 export 'builtin/output/regex_output.dart' show RegexOutput;
+export 'builtin/stats/add_column_merge.dart' show StatsAddColMerge;
 export 'builtin/stats/count_occurrences.dart' show StatsCountOccurrences;
 
 /// Maps builder names to their builder functions.
@@ -42,6 +43,7 @@ Map<String, ConversationTransformerBuilderFn> defaultTransformers() {
     'RawOutput': (config, progress, cache) => RawOutput(config),
     'DsBuildOutput': (config, progress, cache) => DsBuildOutput(config),
     'StatsCountOccurrences': (config, progress, cache) =>
-        StatsCountOccurrences(config, cache: cache)
+        StatsCountOccurrences(config, cache: cache),
+    'StatsAddColMerge': (config, progress, cache) => StatsAddColMerge(config)
   };
 }
