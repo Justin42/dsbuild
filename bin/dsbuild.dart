@@ -86,30 +86,31 @@ void main(List<String> args) async {
     log.info("${input.source} retrieved.");
   });
 
-  if (dsBuild.build.generateHashes || dsBuild.build.verifyRequirements) {
-    for (PassDescriptor pass in dsBuild.repository.descriptor.passes) {
-      for (int i = 0; i < pass.required.length; i++) {
-        final RequirementDescriptor descriptor = pass.required[i];
-        String hash = (await sha512.bind(File(descriptor.path).openRead()).last)
-            .toString();
-        if (dsBuild.build.verifyRequirements && descriptor.sha512 != null) {
-          if (descriptor.sha512 != hash) {
-            throw FileVerificationError(descriptor.path,
-                descriptor.source.toString(), descriptor.sha512!, hash);
-          }
-        } else if (descriptor.sha512 != hash) {
-          dsBuild.repository.updateInputHash(descriptor.path, hash);
-        }
-        log.info(
-            "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.source}\nsha512: $hash");
-      }
-    }
-  }
-
   for (var (int i, PassDescriptor pass)
       in dsBuild.repository.descriptor.passes.indexed) {
+    // Verify pass requirements
+    for (int i = 0; i < pass.required.length; i++) {
+      final RequirementDescriptor descriptor = pass.required[i];
+      File requiredFile = File(descriptor.path);
+      if (!await requiredFile.exists()) {
+        log.warning("Missing required file ${requiredFile.path}");
+        continue;
+      }
+      String hash =
+          (await sha512.bind(requiredFile.openRead()).last).toString();
+      if (dsBuild.build.verifyRequirements && descriptor.sha512 != null) {
+        if (descriptor.sha512 != hash) {
+          throw FileVerificationError(descriptor.path,
+              descriptor.source.toString(), descriptor.sha512!, hash);
+        }
+      } else if (descriptor.sha512 != hash) {
+        dsBuild.repository.updateInputHash(descriptor.path, hash);
+      }
+      log.info(
+          "Hash Result:\nFile: ${descriptor.path}\nSource: ${descriptor.source}\nsha512: $hash");
+    }
+
     log.info("Preparing pipeline...");
-    // TODO
     Stream<List<Conversation>> conversations =
         dsBuild.buildPipeline(pass.steps);
     await conversations.drain();
