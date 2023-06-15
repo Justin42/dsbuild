@@ -45,7 +45,7 @@ class DsBuild {
       {Registry? registry, WorkerPool? workerPool})
       : repository = Repository(descriptor, PackedDataCache()),
         registry = registry ?? Registry({}),
-        progress = ProgressBloc(ProgressState()),
+        progress = progress ?? ProgressBloc(ProgressState()),
         workerPool = workerPool ?? WorkerPool() {
     if (registry == null) {
       this.registry.transformers.addAll(defaultTransformers());
