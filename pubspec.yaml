@@ -1,6 +1,6 @@
 name: dsbuild
 description: Dataset preparation for LM training. Usable as a standalone tool and a library. Process conversations using StreamTransformers configured with simple YAML. Supports multithreading.
-version: 0.1.0-alpha.5
+version: 0.1.0-alpha.6
 repository: https://github.com/Justin42/dsbuild
 topics: [ ai, nlp, lm ]
 
