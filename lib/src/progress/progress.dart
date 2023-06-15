@@ -39,9 +39,7 @@ class ProgressState {
 
   /// Copy the instance with the provided values.
   ProgressState copyWith(
-          {int? totalInputFiles,
-          int? totalOutputFiles,
-          int? messagesTotal,
+          {int? messagesTotal,
           int? messagesDropped,
           int? messagesProcessed,
           int? conversationsTotal,
@@ -60,6 +58,29 @@ class ProgressState {
               conversationsProcessed ?? this.conversationsProcessed,
           passesComplete: passesComplete ?? this.passesComplete,
           complete: complete ?? this.complete);
+
+  /// Convert from a json compatible map
+  ProgressState.fromJson(Map<String, dynamic> json)
+      : messagesTotal = json['messagesTotal'] ?? 0,
+        messagesDropped = json['messagesDropped'] ?? 0,
+        messagesProcessed = json['messagesProcessed'] ?? 0,
+        conversationsTotal = json['conversationTotal'] ?? 0,
+        conversationsDropped = json['conversationsDropped'] ?? 0,
+        conversationsProcessed = json['conversationsProcessed'] ?? 0,
+        passesComplete = json['passesComplete'] ?? 0,
+        complete = json['complete'] ?? false;
+
+  /// Convert to a json compatible map
+  Map<String, dynamic> toJson() => {
+        'messagesTotal': messagesTotal,
+        'messagesDropped': messagesDropped,
+        'messagesProcessed': messagesProcessed,
+        'conversationsTotal': conversationsTotal,
+        'conversationsDropped': conversationsDropped,
+        'conversationsProcessed': conversationsProcessed,
+        'passesComplete': passesComplete,
+        'complete': complete
+      };
 }
 
 /// Bloc for [ProgressState]
