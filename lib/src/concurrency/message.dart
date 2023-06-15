@@ -1,7 +1,7 @@
 import 'dart:isolate';
 
 import '../conversation.dart';
-import '../progress.dart';
+import '../progress/progress.dart';
 
 /// Request type for worker tasks.
 enum RequestType {

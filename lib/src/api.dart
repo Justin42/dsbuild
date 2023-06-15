@@ -9,7 +9,7 @@ import 'conversation.dart';
 import 'descriptor.dart';
 import 'descriptor_extensions.dart';
 import 'packed_data.dart';
-import 'progress.dart';
+import 'progress/progress.dart';
 import 'registry.dart';
 import 'repository.dart';
 

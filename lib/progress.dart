@@ -2,4 +2,4 @@
 /// Consumers should accept a [ProgressState] stream.
 library progress;
 
-export 'src/progress.dart';
+export 'src/progress/progress.dart';
