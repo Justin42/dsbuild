@@ -79,11 +79,14 @@ class Participants extends ConversationTransformer {
   List<Message> _concatenateConsecutive(final Iterable<Message> messages) {
     final List<Message> newMessages = [];
     for (Message message in messages) {
-      if (newMessages.isEmpty) newMessages.add(message);
-      if (message.from == newMessages.last.from) {
+      if (newMessages.isEmpty) {
+        newMessages.add(message);
+      } else if (message.from == newMessages.last.from) {
         Message lastMessage = newMessages.last;
         newMessages[newMessages.length - 1] = lastMessage.copyWith(
             value: [lastMessage.value, message.value].join("\n"));
+      } else {
+        newMessages.add(message);
       }
     }
     return newMessages;
@@ -117,7 +120,7 @@ class Participants extends ConversationTransformer {
             }
           }
         }
-        newConversations.add(conversation);
+        newConversations.add(conversation.copyWith(messages: messages));
       }
       yield newConversations;
     }
