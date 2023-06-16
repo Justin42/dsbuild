@@ -96,6 +96,9 @@ void main(List<String> args) async {
         log.warning("Missing required file ${requiredFile.path}");
         continue;
       }
+      if (!dsBuild.build.verifyRequirements) {
+        continue;
+      }
       String hash =
           (await sha512.bind(requiredFile.openRead()).last).toString();
       if (dsBuild.build.verifyRequirements && descriptor.sha512 != null) {

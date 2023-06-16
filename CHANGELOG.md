@@ -1,3 +1,8 @@
+*0.1.0-alpha.6:*
+
+- No longer hash required files when `build.verifyRequirements` is false.
+
+---
 *0.1.0-alpha.5:*
 
 - Required binary data can now be pushed to workers.
