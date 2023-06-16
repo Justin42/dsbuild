@@ -72,6 +72,9 @@ class Message {
   /// Create a copy of this instance with the supplied values.
   Message copyWith({String? from, String? value}) =>
       Message(from ?? this.from, value ?? this.value);
+
+  @override
+  String toString() => "$from: $value";
 }
 
 /// An envelope containing a [Message] and a conversation identifier.
