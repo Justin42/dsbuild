@@ -23,8 +23,16 @@ class ProgressState {
   /// Completed passes
   final int passesComplete;
 
+  /// Start time
+  final int startTime;
+
   /// Complete
   final bool complete;
+
+  /// Elapsed time since last reset
+  Duration get elapsed => DateTime.now()
+      .toUtc()
+      .difference(DateTime.fromMillisecondsSinceEpoch(startTime));
 
   /// Create a new instance
   const ProgressState(
@@ -35,6 +43,7 @@ class ProgressState {
       this.conversationsDropped = 0,
       this.conversationsProcessed = 0,
       this.passesComplete = 0,
+      this.startTime = 0,
       this.complete = false});
 
   /// Copy the instance with the provided values.
@@ -46,6 +55,7 @@ class ProgressState {
           int? conversationsDropped,
           int? conversationsProcessed,
           int? passesComplete,
+          int? startTime,
           bool? complete}) =>
       ProgressState(
           messagesTotal: messagesTotal ?? this.messagesTotal,
@@ -57,6 +67,7 @@ class ProgressState {
           conversationsProcessed:
               conversationsProcessed ?? this.conversationsProcessed,
           passesComplete: passesComplete ?? this.passesComplete,
+          startTime: startTime ?? this.startTime,
           complete: complete ?? this.complete);
 
   /// Convert from a json compatible map
@@ -68,6 +79,7 @@ class ProgressState {
         conversationsDropped = json['conversationsDropped'] ?? 0,
         conversationsProcessed = json['conversationsProcessed'] ?? 0,
         passesComplete = json['passesComplete'] ?? 0,
+        startTime = json['startTime'] ?? 0,
         complete = json['complete'] ?? false;
 
   /// Convert to a json compatible map
@@ -79,6 +91,7 @@ class ProgressState {
         'conversationsDropped': conversationsDropped,
         'conversationsProcessed': conversationsProcessed,
         'passesComplete': passesComplete,
+        'startTime': startTime,
         'complete': complete
       };
 }
@@ -111,6 +124,9 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
         messagesProcessed: event.resetCounts ? 0 : null,
         messagesTotal: event.resetCounts ? 0 : null,
         messagesDropped: event.resetCounts ? 0 : null)));
+
+    on<ResetTimer>((event, emit) => emit(state.copyWith(
+        startTime: DateTime.now().toUtc().millisecondsSinceEpoch)));
   }
 }
 
@@ -169,4 +185,10 @@ class PassComplete extends ProgressEvent {
 
   /// Create a new instance
   const PassComplete({this.resetCounts = false});
+}
+
+/// Reset start time for timer
+class ResetTimer extends ProgressEvent {
+  /// Create a new instance
+  const ResetTimer();
 }
