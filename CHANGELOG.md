@@ -1,5 +1,6 @@
 *0.1.0-alpha.6:*
 
+- Better progress display.
 - No longer hash required files when `build.verifyRequirements` is false.
 
 ---

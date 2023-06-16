@@ -16,6 +16,8 @@ class Participants extends ConversationTransformer {
   /// Maximum participant count
   final int? max;
 
+  // TODO Concatenate consecutive
+  // TODO Drop posters with lowest post counts when greater than max
   /// Require alternating participants
   final bool alternating;
 

@@ -11,12 +11,12 @@ import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
   final Logger log = Logger("dsbuild");
+  ProgressBloc progress = ProgressBloc(
+      ProgressState(startTime: DateTime.timestamp().millisecondsSinceEpoch));
+  LogListener logListener = LogListener(progress);
 
   Logger.root.level = Level.FINE;
-  Logger.root.onRecord.listen((record) {
-    print(
-        '${record.time.toUtc()}/${record.level.name}/${record.loggerName}: ${record.message}');
-  });
+  Logger.root.onRecord.listen(logListener.onLogRecord);
 
   String descriptorPath = args.isEmpty ? 'dataset.yaml' : args[0];
 
@@ -45,31 +45,10 @@ void main(List<String> args) async {
   log.info("Removed $deletedFiles files");
 
   // Initialize DsBuild
-  ProgressBloc progress = ProgressBloc(ProgressState());
   DsBuild dsBuild = DsBuild(descriptor, progress);
   await dsBuild.workerPool.startLocalWorkers(
       descriptor.build.threads ?? Platform.numberOfProcessors);
   log.info("${dsBuild.workerPool.workers.length} active workers.");
-
-  // Progress output
-  DateTime startTime = DateTime.timestamp();
-  DateTime lastProgressOutput = DateTime.timestamp();
-  dsBuild.progress.stream.listen((state) {
-    if (DateTime.timestamp().difference(lastProgressOutput).inSeconds > 5) {
-      lastProgressOutput = DateTime.timestamp();
-      log.fine("Progress:\n"
-          "Messages processed: ${state.messagesProcessed} / ${state.messagesTotal}\n"
-          "Conversations processed: ${state.conversationsProcessed} / ${state.conversationsTotal}");
-    }
-  }, onDone: () {
-    ProgressState state = dsBuild.progress.state;
-    log.fine("Progress:\n"
-        "Messages processed: ${state.messagesProcessed} / ${state.messagesTotal}\n"
-        "Conversations processed: ${state.conversationsProcessed} / ${state.conversationsTotal}");
-  });
-
-  // Additional transformers can be registered.
-  //dsBuild.registry.registerPreprocessor(name, (config) => Preprocessor())
 
   log.info("Validating descriptor.");
   List<String> errors = dsBuild.verifyDescriptor();
@@ -114,6 +93,8 @@ void main(List<String> args) async {
     }
 
     log.info("Preparing pipeline...");
+    logListener.displayProgress = true;
+    progress.add(ResetTimer());
     Stream<List<Conversation>> conversations =
         dsBuild.buildPipeline(pass.steps);
     await conversations.drain();
@@ -152,7 +133,9 @@ void main(List<String> args) async {
       }
     }
   }
+
   await dsBuild.progress.close();
-  Duration duration = DateTime.timestamp().difference(startTime);
-  log.info("Build completed in $duration");
+  log.info("Build completed in ${progress.state.elapsed}\n"
+      "Messages ${progress.state.messagesProcessed} / ${progress.state.messagesTotal}\n"
+      "Conversations ${progress.state.conversationsProcessed} / ${progress.state.conversationsTotal}");
 }
