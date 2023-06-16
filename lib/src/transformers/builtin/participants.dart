@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:dsbuild/src/transformers/conversation_transformer.dart';
-import 'package:logging/logging.dart';
 
 import '../../conversation.dart';
-
-Logger _log = Logger("dsbuild/transformers");
 
 /// Drops conversations according to their participant count.
 class Participants extends ConversationTransformer {
@@ -21,48 +18,109 @@ class Participants extends ConversationTransformer {
   /// Require alternating participants
   final bool alternating;
 
-  int _skipped = 0;
+  /// Concatenate consecutive messages when [alternating] is true.
+  final bool concatenateConsecutive;
+
+  /// Prune the participants messages instead of the conversation when possible
+  final bool pruneMessages;
 
   /// Constructs a new instance
   Participants(super.config)
       : min = config['min'] ?? 0,
         max = config['max'],
-        alternating = config['alternating'] ?? false;
+        alternating = config['alternating'] ?? false,
+        concatenateConsecutive = true,
+        pruneMessages = true;
 
   @override
   String get description =>
       "Filter conversations according to participant count.";
 
+  HashMap<String, int> _getParticipants(Iterable<Message> messages) {
+    HashMap<String, int> participants = HashMap();
+    for (Message message in messages) {
+      participants.update(message.from, (int val) => val + 1,
+          ifAbsent: () => 1);
+    }
+    return participants;
+  }
+
+  /// Mutates [participants] and [messages] to remove the participant with the fewest number of messages.
+  void _removeLowestParticipant(
+      HashMap<String, int> participants, List<Message> messages) {
+    if (participants.isEmpty) return;
+    MapEntry<String, int>? lowest;
+    for (MapEntry<String, int> entry in participants.entries) {
+      lowest ??= entry;
+      if (entry.value < lowest.value) {
+        lowest = entry;
+      }
+    }
+    participants.remove(lowest!.key);
+    return messages.retainWhere((element) => element.from != lowest!.key);
+  }
+
+  bool _hasConsecutive(Iterable<Message> messages) {
+    if (messages.isEmpty) return false;
+    String? lastParticipant;
+    for (Message message in messages) {
+      if (lastParticipant == null) {
+        lastParticipant = message.from;
+        continue;
+      }
+      if (message.from == lastParticipant) {
+        return true;
+      }
+      lastParticipant = message.from;
+    }
+    return false;
+  }
+
+  List<Message> _concatenateConsecutive(final Iterable<Message> messages) {
+    final List<Message> newMessages = [];
+    for (Message message in messages) {
+      if (newMessages.isEmpty) newMessages.add(message);
+      if (message.from == newMessages.last.from) {
+        Message lastMessage = newMessages.last;
+        newMessages[newMessages.length - 1] = lastMessage.copyWith(
+            value: [lastMessage.value, message.value].join("\n"));
+      }
+    }
+    return newMessages;
+  }
+
   @override
   Stream<List<Conversation>> bind(Stream<List<Conversation>> stream) async* {
-    await for (List<Conversation> batch in stream) {
-      List<Conversation> conversations = [];
-      for (Conversation conversation in batch) {
-        String? lastParticipant;
-        HashSet<String> participants = HashSet();
-        bool skip = false;
-        for (Message message in conversation.messages) {
-          if (lastParticipant == message.from && alternating) {
-            skip = true;
-            break;
-          }
-          participants.add(message.from);
-          lastParticipant = message.from;
-          if (max != null && participants.length > max!) {
-            skip = true;
-            break;
+    await for (List<Conversation> conversations in stream) {
+      List<Conversation> newConversations = [];
+      for (Conversation conversation in conversations) {
+        HashMap<String, int> participants = HashMap();
+        List<Message> messages = conversation.messages.toList();
+
+        /// Remove participants above max or below min with the lowest message counts
+        participants = _getParticipants(conversation.messages);
+        if (participants.length < min) continue;
+        if (max != null && participants.length > max!) {
+          if (!pruneMessages) continue;
+          do {
+            _removeLowestParticipant(participants, messages);
+          } while (participants.length > max!);
+        }
+
+        /// Concatenate consecutive messages
+        if (alternating) {
+          if (_hasConsecutive(messages)) {
+            if (!concatenateConsecutive) {
+              continue;
+            } else {
+              messages = _concatenateConsecutive(messages);
+            }
           }
         }
-        if (participants.length < min) skip = true;
-        if (!skip) {
-          conversations.add(conversation);
-        } else {
-          _skipped += 1;
-        }
+        newConversations.add(conversation);
       }
-      yield conversations;
+      yield newConversations;
     }
-    _log.finer("${runtimeType.toString()} dropped $_skipped conversations.");
   }
 }
 
