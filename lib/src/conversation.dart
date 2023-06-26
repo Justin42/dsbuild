@@ -24,7 +24,7 @@ class Conversation {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'messages': [for (Message message in messages) message.toJson()]
+      'messages': [for (Message message in messages) message.toMap()]
     };
   }
 
@@ -52,26 +52,36 @@ extension Conversations on Iterable<Conversation> {
 
 /// A message in a conversation.
 class Message {
-  /// Empty message
-  static Message empty = const Message('', '');
-
   /// Message sender
   final String from;
 
   /// Message text value
   final String value;
 
+  /// Message identifier
+  final String id;
+
   /// Create a new message from [from] with [value]
-  const Message(this.from, this.value);
+  const Message(this.from, this.value, [this.id = '']);
+
+  /// An empty message.
+  const Message.empty()
+      : from = '',
+        value = '',
+        id = '';
 
   /// Convert to json-compatible map
-  Map<String, dynamic> toJson() {
-    return {'from': from, 'value': value};
+  Map<String, dynamic> toMap([bool includeId = false]) {
+    return {
+      'from': from,
+      'value': value,
+      if (includeId && id.isNotEmpty) 'id': id
+    };
   }
 
   /// Create a copy of this instance with the supplied values.
-  Message copyWith({String? from, String? value}) =>
-      Message(from ?? this.from, value ?? this.value);
+  Message copyWith({String? from, String? value, String? id}) =>
+      Message(from ?? this.from, value ?? this.value, id ?? this.id);
 
   @override
   String toString() => "$from: $value";
@@ -81,7 +91,7 @@ class Message {
 @immutable
 class MessageEnvelope {
   /// Empty message
-  static MessageEnvelope empty = const MessageEnvelope(Message('', ''), '');
+  static MessageEnvelope empty = const MessageEnvelope(Message.empty(), '');
 
   /// Message data
   final Message message;

@@ -56,7 +56,8 @@ class CsvInput extends ConversationTransformer {
             String conversationId = data[convoIdCol].toString();
             bool newConversation = conversationId != buffer.currentConversation;
             MessageEnvelope newMessage = MessageEnvelope(
-                Message(data[fromCol].toString(), data[messageCol].toString()),
+                Message(data[fromCol].toString(), data[messageCol].toString(),
+                    data[0]),
                 conversationId);
             if (newConversation) {
               Conversation? conversation = buffer.flush(update: false);

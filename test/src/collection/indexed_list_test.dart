@@ -1,8 +1,9 @@
 import 'package:dsbuild/src/collection/indexed_list.dart';
+import 'package:dsbuild/src/tokenizer/token.dart';
 import 'package:test/test.dart';
 
 void main() {
-  IndexedList<String> data = IndexedList();
+  IndexedList data = IndexedList();
 
   setUp(() async {});
 
@@ -12,8 +13,11 @@ void main() {
 
   group("IndexedList", () {
     test('.add()', () {
-      data.add("Test");
-      expect(data[0], "Test");
+      data.add(Token("Test"));
+      data.add(Token("Test"));
+      data.addIfAbsent(Token("Test"));
+      expect(data.length, 1);
+      expect(data[0], const Token("Test"));
     });
 
     test('.indexOf()', () {

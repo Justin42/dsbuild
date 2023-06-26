@@ -25,11 +25,12 @@ class FastChatInput extends ConversationTransformer {
 
     yield* Stream.fromIterable(json).transform(
         StreamTransformer.fromHandlers(handleData: (conversation, sink) {
+      int nextId = 0;
       sink.add([
         Conversation(conversation['id'].hashCode,
             messages: [
               for (dynamic message in conversation['conversations'])
-                Message(message['from']!, message['value']!)
+                Message(message['from']!, message['value']!, '${nextId++}')
             ].lock,
             meta: IMap({'inputId': conversation['id']}))
       ]);

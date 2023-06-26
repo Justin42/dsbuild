@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
 /// A list indexed by a HashMap. Does not allow duplicates.
@@ -7,11 +8,11 @@ import 'package:meta/meta.dart';
 /// Favors slower operations over reindexing whenever possible.
 /// Uses the index for search operations whenever possible.
 @internal
-class IndexedList<T extends Object> extends ListBase<T> {
+class IndexedList<T> extends ListBase<T> {
   /// Backing data
   final List<T> _data = [];
 
-  final HashMap<T, int> _index = HashMap();
+  final LinkedHashMap<T, int> _index = LinkedHashMap();
 
   @override
   int get length => _data.length;
@@ -29,11 +30,7 @@ class IndexedList<T extends Object> extends ListBase<T> {
   T operator [](int index) => _data[index];
 
   @override
-  void add(T element) => _index.putIfAbsent(element, () {
-        int idx = _data.length;
-        _data.add(element);
-        return idx;
-      });
+  void add(T element) => addIfAbsent(element);
 
   @override
   void addAll(Iterable<T> iterable) {
@@ -43,12 +40,10 @@ class IndexedList<T extends Object> extends ListBase<T> {
   }
 
   /// Returns the index of the new or existing element
-  int addIfAbsent(T element) {
-    int? existing = _index[element];
-    if (existing != null) return existing;
-    _data.add(element);
-    return _data.length - 1;
-  }
+  int addIfAbsent(T element) => _index.putIfAbsent(element, () {
+        _data.add(element);
+        return _data.length - 1;
+      });
 
   @override
   bool contains(Object? element) => _index.containsKey(element);
@@ -82,8 +77,8 @@ class IndexedList<T extends Object> extends ListBase<T> {
     _index.clear();
   }
 
-  /// Return a map with the values of the list as keys and their index as values.
-  Map<T, int> asValueMap() {
-    return _index.map((key, value) => MapEntry(key, value));
+  /// Return an immutable map with the values of the list as keys and their index as values.
+  IMap<T, int> index() {
+    return _index.lock;
   }
 }
