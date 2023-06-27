@@ -29,7 +29,7 @@ class Stats extends StatisticsData {
   final LinkedHashMap<int, ConversationStats> _conversations = LinkedHashMap();
 
   /// Total unique words
-  final Tokenizer<String> tokenizer;
+  final WordTokenizer tokenizer;
 
   /// The tokenizer vocabulary.
   Vocabulary<String> get vocabulary => tokenizer.vocab;
@@ -52,22 +52,22 @@ class Stats extends StatisticsData {
                     includeMessageIds: config.includeMessageIds)
                 : const BaseStatsGenerator()),
         _config = config ?? StatsConfig(),
-        tokenizer = Tokenizer(vocabulary ?? Vocabulary());
+        tokenizer = WordTokenizer(vocabulary ?? Vocabulary());
 
   /// Generate stats for the conversation and add them to the data.
-  Future<void> push(Conversation conversation) async {
+  void push(Conversation conversation) {
     _conversations[conversation.id] =
         _generator.generateConversationStats(conversation);
     _messagesTotal += conversation.messages.length;
     if (_config.enableVocabulary) {
       for (Message message in conversation.messages) {
-        await tokenizer.tokenize(message.value).drain();
+        tokenizer.encode(message.value);
       }
     }
   }
 
   /// See [push]
-  Future<void> pushAll(List<Conversation> conversations) async {
+  void pushAll(List<Conversation> conversations) {
     _conversations.addAll(LinkedHashMap.fromIterable(conversations,
         key: (element) => element.id,
         value: (element) => _generator.generateConversationStats(element)));
@@ -75,7 +75,7 @@ class Stats extends StatisticsData {
       _messagesTotal += conversation.messages.length;
       if (_config.enableVocabulary) {
         for (Message message in conversation.messages) {
-          await tokenizer.tokenize(message.value).drain();
+          tokenizer.encode(message.value);
         }
       }
     }

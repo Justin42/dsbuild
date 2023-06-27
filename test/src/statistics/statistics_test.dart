@@ -7,8 +7,9 @@ void main() {
   final Stats stats = Stats();
 
   Conversation conversation = Conversation(0.hashCode,
-      messages:
-          [Message('human', 'This is only a test. Test. 7 Test A.')].lock);
+      messages: [
+        Message('human', 'This is only a test. Test. 7 Test A. test-sauce')
+      ].lock);
 
   setUp(() async {});
 
@@ -18,7 +19,7 @@ void main() {
 
   group("Statistics", () {
     test('.toMap()', () async {
-      await stats.push(conversation);
+      stats.push(conversation);
       print(stats.toMap());
     });
   });
