@@ -43,14 +43,15 @@ class Tokenizer<T> {
 class WordTokenizer extends Tokenizer<String> {
   static final _log = Logger('dsbuild/WordTokenizer');
 
-  final RegExp _splitWord = RegExp(r'(\w+|-|!|\.)');
+  /// Regex used to split words into sub tokens.
+  final RegExp splitWord = RegExp(r'[a-zA-Z]+|[0-9]|-|!|\.|_|:|=');
 
   /// Create an instance
   WordTokenizer(super.vocab);
 
   /// Split a word into parts
   List<String> wordParts(String word) {
-    return _splitWord
+    return splitWord
         .allMatches(word)
         .map((e) => word.substring(e.start, e.end))
         .toList();

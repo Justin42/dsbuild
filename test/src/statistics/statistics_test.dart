@@ -8,7 +8,8 @@ void main() {
 
   Conversation conversation = Conversation(0.hashCode,
       messages: [
-        Message('human', 'This is only a test. Test. 7 Test A. test-sauce')
+        Message(
+            'human', 'This is only a test. Test. 7 Test-8 A. test_sauce27--=')
       ].lock);
 
   setUp(() async {});
@@ -20,7 +21,9 @@ void main() {
   group("Statistics", () {
     test('.toMap()', () async {
       stats.push(conversation);
-      print(stats.toMap());
+      print(stats.toMap()..remove('vocabulary'));
+      expect(stats.vocabulary.first, '[UNK]');
+      expect(stats.vocabulary.last, 'sauce');
     });
   });
 }

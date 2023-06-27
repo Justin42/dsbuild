@@ -4,6 +4,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
 import '../conversation.dart';
+import '../tokenizer/common_tokens.dart' as t;
 import '../tokenizer/tokenizer.dart';
 import '../tokenizer/vocabulary.dart';
 import 'config.dart';
@@ -44,7 +45,8 @@ class Stats extends StatisticsData {
   Stats(
       {StatsConfig? config,
       StatsGenerator? generator,
-      Vocabulary<String>? vocabulary})
+      Vocabulary<String>? vocabulary,
+      addCommonTokens = true})
       : _generator = generator ??
             (config != null
                 ? BaseStatsGenerator(
@@ -52,7 +54,15 @@ class Stats extends StatisticsData {
                     includeMessageIds: config.includeMessageIds)
                 : const BaseStatsGenerator()),
         _config = config ?? StatsConfig(),
-        tokenizer = WordTokenizer(vocabulary ?? Vocabulary());
+        tokenizer = WordTokenizer(vocabulary ??
+            Vocabulary(
+                tokens: addCommonTokens
+                    ? [
+                        ...t.specialTokens,
+                        ...t.punctuationTokens,
+                        ...t.digitTokens
+                      ]
+                    : []));
 
   /// Generate stats for the conversation and add them to the data.
   void push(Conversation conversation) {

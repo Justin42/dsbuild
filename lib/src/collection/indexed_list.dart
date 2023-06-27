@@ -40,10 +40,14 @@ class IndexedList<T> extends ListBase<T> {
   }
 
   /// Returns the index of the new or existing element
-  int addIfAbsent(T element) => _index.putIfAbsent(element, () {
-        _data.add(element);
-        return _data.length - 1;
-      });
+  (int idx, bool isNew) addIfAbsent(T element) {
+    int startLen = _data.length;
+    int idx = _index.putIfAbsent(element, () {
+      _data.add(element);
+      return _data.length - 1;
+    });
+    return (idx, _data.length != startLen);
+  }
 
   @override
   bool contains(Object? element) => _index.containsKey(element);

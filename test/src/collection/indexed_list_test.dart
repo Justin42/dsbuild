@@ -31,7 +31,7 @@ void main() {
     });
 
     test('.addIfAbsent()', () {
-      int idx = data.addIfAbsent("Test");
+      int idx = data.addIfAbsent("Test").$1;
       expect(idx, 0);
       expect(data[idx], "Test");
     });

@@ -29,6 +29,7 @@ class VocabularyCodec<T> implements Codec<T, int> {
   Converter<T, int> get encoder => VocabularyEncoder(vocab, train, unk);
 
   @override
+  // TODO: implement fuse
   Codec<T, R> fuse<R>(Codec<int, R> other) {
     throw UnimplementedError();
   }
@@ -65,7 +66,7 @@ class VocabularyEncoder<T> extends Converter<T, int> {
   /// Unknown token index
   final int unknown;
 
-  /// Creat a new instance
+  /// Create a new instance
   const VocabularyEncoder(Vocabulary<T> vocab,
       [this.train = true, this.unknown = -1])
       : _vocab = vocab;
