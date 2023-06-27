@@ -1,1 +1,1 @@
-export 'src/tokenizer/tokenizer.dart' show Token;
+export 'src/tokenizer/tokenizer.dart' show WordTokenizer;
