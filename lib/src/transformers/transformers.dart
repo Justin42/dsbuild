@@ -1,4 +1,4 @@
-import 'package:dsbuild/src/transformers/builtin/stats/collect_statistics.dart';
+import 'package:dsbuild/src/transformers/builtin/stats/stats_output.dart';
 
 import '';
 
@@ -46,5 +46,5 @@ Map<String, ConversationTransformerBuilderFn> defaultTransformers() => {
       'StatsCountOccurrences': (config, progress, cache) =>
           StatsCountOccurrences(config, cache: cache),
       'StatsAddColMerge': (config, progress, cache) => StatsAddColMerge(config),
-      'StatsOutput': (config, progress, cache) => CollectStatistics(config)
+      'StatsOutput': (config, progress, cache) => StatsOutput(config)
     };

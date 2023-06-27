@@ -6,7 +6,7 @@ import '../../../statistics/statistics.dart';
 import '../../conversation_transformer.dart';
 
 /// Collect statistics for all conversations.
-class CollectStatistics extends ConversationTransformer {
+class StatsOutput extends ConversationTransformer {
   /// Track statistics
   final Stats stats;
 
@@ -14,7 +14,7 @@ class CollectStatistics extends ConversationTransformer {
   final File file;
 
   /// Create new instance
-  CollectStatistics(super.config)
+  StatsOutput(super.config)
       : stats = Stats(),
         file = File(config['file']);
 
