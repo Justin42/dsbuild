@@ -59,28 +59,28 @@ class Message {
   final String value;
 
   /// Message identifier
-  final String id;
+  final int? id;
 
   /// Create a new message from [from] with [value]
-  const Message(this.from, this.value, [this.id = '']);
+  const Message(this.from, this.value, [this.id]);
 
   /// An empty message.
   const Message.empty()
       : from = '',
         value = '',
-        id = '';
+        id = null;
 
   /// Convert to json-compatible map
   Map<String, dynamic> toMap([bool includeId = false]) {
     return {
       'from': from,
       'value': value,
-      if (includeId && id.isNotEmpty) 'id': id
+      if (includeId && id != null) 'id': id
     };
   }
 
   /// Create a copy of this instance with the supplied values.
-  Message copyWith({String? from, String? value, String? id}) =>
+  Message copyWith({String? from, String? value, int? id}) =>
       Message(from ?? this.from, value ?? this.value, id ?? this.id);
 
   @override

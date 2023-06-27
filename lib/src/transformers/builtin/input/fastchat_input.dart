@@ -30,7 +30,7 @@ class FastChatInput extends ConversationTransformer {
         Conversation(conversation['id'].hashCode,
             messages: [
               for (dynamic message in conversation['conversations'])
-                Message(message['from']!, message['value']!, '${nextId++}')
+                Message(message['from']!, message['value']!, nextId++)
             ].lock,
             meta: IMap({'inputId': conversation['id']}))
       ]);
