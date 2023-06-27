@@ -1,3 +1,5 @@
+import 'package:dsbuild/src/transformers/builtin/stats/collect_statistics.dart';
+
 import '';
 
 export './builtin/encoding.dart' show Encoding;
@@ -20,30 +22,29 @@ export 'builtin/output/regex_output.dart' show RegexOutput;
 export 'builtin/stats/add_column_merge.dart' show StatsAddColMerge;
 export 'builtin/stats/count_occurrences.dart' show StatsCountOccurrences;
 
-/// Maps builder names to their builder functions.
-Map<String, ConversationTransformerBuilderFn> defaultTransformers() {
-  return {
-    'Participants': (config, progress, cache) => Participants(config),
-    'HtmlStrip': (config, progress, cache) => HtmlStrip(config),
-    'RenameParticipants': (config, progress, cache) =>
-        RenameParticipants(config),
-    'Encoding': (config, progress, cache) => Encoding(config),
-    'Trim': (config, progress, cache) => Trim(config),
-    'RegexReplace': (config, progress, cache) => RegexReplace(config),
-    'RegexExtract': (config, progress, cache) => RegexOutput(config),
-    'CsvInput': (config, progress, cache) =>
-        CsvInput(config, progress: progress),
-    'CsvOutput': (config, progress, cache) => CsvOutput(config),
-    'ExactReplace': (config, progress, cache) =>
-        ExactReplace(config, cache: cache),
-    'FullMatch': (config, progress, cache) => FullMatch(config),
-    'FastChatInput': (config, progress, cache) => FastChatInput(config),
-    'FastChatOutput': (config, progress, cache) => FastChatOutput(config),
-    'FileConcatenate': (config, progress, cache) => FileConcatenate(config),
-    'RawOutput': (config, progress, cache) => RawOutput(config),
-    'DsBuildOutput': (config, progress, cache) => DsBuildOutput(config),
-    'StatsCountOccurrences': (config, progress, cache) =>
-        StatsCountOccurrences(config, cache: cache),
-    'StatsAddColMerge': (config, progress, cache) => StatsAddColMerge(config)
-  };
-}
+/// Maps transformer names to their builder functions.
+Map<String, ConversationTransformerBuilderFn> defaultTransformers() => {
+      'Participants': (config, progress, cache) => Participants(config),
+      'HtmlStrip': (config, progress, cache) => HtmlStrip(config),
+      'RenameParticipants': (config, progress, cache) =>
+          RenameParticipants(config),
+      'Encoding': (config, progress, cache) => Encoding(config),
+      'Trim': (config, progress, cache) => Trim(config),
+      'RegexReplace': (config, progress, cache) => RegexReplace(config),
+      'RegexExtract': (config, progress, cache) => RegexOutput(config),
+      'CsvInput': (config, progress, cache) =>
+          CsvInput(config, progress: progress),
+      'CsvOutput': (config, progress, cache) => CsvOutput(config),
+      'ExactReplace': (config, progress, cache) =>
+          ExactReplace(config, cache: cache),
+      'FullMatch': (config, progress, cache) => FullMatch(config),
+      'FastChatInput': (config, progress, cache) => FastChatInput(config),
+      'FastChatOutput': (config, progress, cache) => FastChatOutput(config),
+      'FileConcatenate': (config, progress, cache) => FileConcatenate(config),
+      'RawOutput': (config, progress, cache) => RawOutput(config),
+      'DsBuildOutput': (config, progress, cache) => DsBuildOutput(config),
+      'StatsCountOccurrences': (config, progress, cache) =>
+          StatsCountOccurrences(config, cache: cache),
+      'StatsAddColMerge': (config, progress, cache) => StatsAddColMerge(config),
+      'StatsOutput': (config, progress, cache) => CollectStatistics(config)
+    };
