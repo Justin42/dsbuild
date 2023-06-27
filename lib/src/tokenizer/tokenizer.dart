@@ -32,22 +32,27 @@ class Tokenizer<T> {
   VocabularyCodec<T> get codec => VocabularyCodec(vocab, train);
 
   /// Create a new instance.
-  const Tokenizer(this.vocab, [this.train = true, this.defaultToken = 0]);
+  const Tokenizer(this.vocab, {this.train = true, this.defaultToken = 0});
 
   /// Clone this instance with new values.
   Tokenizer<T> copyWith({Vocabulary<T>? vocab, bool? train}) =>
-      Tokenizer(vocab ?? this.vocab, train ?? this.train);
+      Tokenizer(vocab ?? this.vocab, train: train ?? this.train);
 }
 
 /// A word level tokenizer.
 class WordTokenizer extends Tokenizer<String> {
+  /// Default regex for splitting words into sub tokens
+  static final String defaultSplitWord = r'[a-zA-Z]+|[0-9]|-|!|\.|_|:|=';
+
   static final _log = Logger('dsbuild/WordTokenizer');
 
   /// Regex used to split words into sub tokens.
-  final RegExp splitWord = RegExp(r'[a-zA-Z]+|[0-9]|-|!|\.|_|:|=');
+  final Pattern splitWord;
 
   /// Create an instance
-  WordTokenizer(super.vocab);
+  WordTokenizer(super.vocab,
+      {super.train, super.defaultToken, Pattern? splitWord})
+      : splitWord = splitWord ?? RegExp(defaultSplitWord);
 
   /// Split a word into parts
   List<String> wordParts(String word) {
