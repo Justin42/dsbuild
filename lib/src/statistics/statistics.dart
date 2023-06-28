@@ -136,7 +136,13 @@ class MessageStats extends StatisticsData {
 @immutable
 class ConversationStats extends StatisticsData {
   /// Messages in conversation
-  int get length => messages.length;
+  int get messagesTotal => messages.length;
+
+  /// Total length of content of all messages
+  int get lengthTotal => messages.sumBy((element) => element.length);
+
+  /// Average length of content of all messages
+  double get lengthAverage => lengthTotal / messagesTotal;
 
   /// Conversation id
   final int? id;
@@ -151,7 +157,9 @@ class ConversationStats extends StatisticsData {
   /// Convert to json compatible map
   Map<String, dynamic> toMap() => <String, dynamic>{
         if (id != null) 'id': id,
-        'messagesTotal': messages.length,
+        'messagesTotal': messagesTotal,
+        'lengthTotal': lengthTotal,
+        'lengthAverage': lengthAverage,
         'messages': messages.map((element) => element.toMap()).toList()
       };
 }
