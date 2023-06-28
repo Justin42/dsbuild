@@ -10,6 +10,7 @@ environment:
 dependencies:
   async: ^2.11.0
   bloc: ^8.1.1
+  collection: ^1.17.2
   crypto: ^3.0.3
   csv: ^5.0.2
   fast_immutable_collections: ^9.1.3
