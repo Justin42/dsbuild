@@ -16,7 +16,7 @@ class StatsOutput extends ConversationTransformer {
   /// Create new instance
   StatsOutput(super.config)
       : stats = Stats(),
-        file = File(config['file']);
+        file = File(config['path']);
 
   @override
   Stream<List<Conversation>> bind(Stream<List<Conversation>> stream) async* {
