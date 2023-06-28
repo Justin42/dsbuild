@@ -42,21 +42,21 @@ class Tokenizer<T> {
 /// A word level tokenizer.
 class WordTokenizer extends Tokenizer<String> {
   /// Default regex for splitting words into sub tokens
-  static final String defaultSplitWord = r'[a-zA-Z]+|[0-9]|-|!|\.|_|:|=';
+  static final RegExp defaultSplitWord =
+      RegExp(r"[a-zA-Z]+|[0-9]|-|!|\.|_|:|=|'");
 
   static final _log = Logger('dsbuild/WordTokenizer');
 
-  /// Regex used to split words into sub tokens.
-  final Pattern splitWord;
+  /// Pattern for splitting words. Defaults to [defaultSplitWord]
+  final Pattern? splitWord;
 
   /// Create an instance
-  WordTokenizer(super.vocab,
-      {super.train, super.defaultToken, Pattern? splitWord})
-      : splitWord = splitWord ?? RegExp(defaultSplitWord);
+  const WordTokenizer(super.vocab,
+      {super.train, super.defaultToken, this.splitWord});
 
   /// Split a word into parts
   List<String> wordParts(String word) {
-    return splitWord
+    return (splitWord ?? defaultSplitWord)
         .allMatches(word)
         .map((e) => word.substring(e.start, e.end))
         .toList();
