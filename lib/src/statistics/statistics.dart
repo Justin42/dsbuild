@@ -107,9 +107,12 @@ class Stats extends StatisticsData {
   Map<String, dynamic> toMap() => {
         'conversationsTotal': conversationsTotal,
         'messagesTotal': messagesTotal,
-        'conversations':
-            _conversations.map((key, value) => MapEntry(key, value.toMap())),
-        'vocabulary': vocabulary.toMap(),
+        'conversations': <String, dynamic>{
+          for (MapEntry<int, ConversationStats> convStats
+              in _conversations.entries)
+            convStats.key.toString(): convStats.value.toMap()
+        },
+        'vocabulary': vocabulary.toMap().unlockView,
       };
 }
 
@@ -146,9 +149,9 @@ class ConversationStats extends StatisticsData {
       : messages = IList(messages);
 
   /// Convert to json compatible map
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         if (id != null) 'id': id,
         'messagesTotal': messages.length,
-        'messages': messages.toJson((element) => element.toMap())
+        'messages': messages.map((element) => element.toMap()).toList()
       };
 }

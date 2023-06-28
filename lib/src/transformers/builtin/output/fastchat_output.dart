@@ -37,7 +37,7 @@ class FastChatOutput extends ConversationTransformer {
         if (buffer.isEmpty) {
           buffer.write(encoder.convert({
             'id': conversation.id,
-            'conversations': conversation.messages.toJson((p0) => p0)
+            'conversations': conversation.messages.toJson((p0) => p0.toMap())
           }));
         } else {
           ioSink.write(buffer);
@@ -45,7 +45,7 @@ class FastChatOutput extends ConversationTransformer {
           buffer.clear();
           buffer.write(encoder.convert({
             'id': conversation.id,
-            'conversations': conversation.messages.toJson((p0) => p0)
+            'conversations': conversation.messages.toJson((p0) => p0.toMap())
           }));
         }
       }
