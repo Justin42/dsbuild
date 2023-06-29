@@ -1,5 +1,8 @@
 import 'dart:collection';
+import 'dart:math';
 
+import 'package:collection/collection.dart';
+import 'package:dsbuild/src/math_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
@@ -40,6 +43,36 @@ class Stats extends StatisticsData {
 
   /// Total number of messages across all conversations.
   int get messagesTotal => _messagesTotal;
+
+  /// The average message count across all conversations.
+  double get messagesCountMean => [
+        for (ConversationStats conversation in _conversations.values)
+          conversation.messagesCount
+      ].toList(growable: false).average;
+
+  /// The average length of messages across all conversations.
+  double get messagesLenMean => [
+        for (ConversationStats conversation in _conversations.values)
+          conversation.lenMean
+      ].toList(growable: false).average;
+
+  /// The standard deviation of the length of messages across all conversations.
+  double get messagesLenStdDev => [
+        for (ConversationStats conversation in _conversations.values)
+          conversation.lenTotal
+      ].toList(growable: false).standardDeviation(population: true);
+
+  /// Total length of all messages.
+  int get messagesLenTotal =>
+      _conversations.values.fold(0, (total, e) => total + e.lenTotal);
+
+  /// The length of the shortest message across all conversations.
+  int get messagesLenMin =>
+      _conversations.values.map((e) => e.lenMin).reduce(min);
+
+  /// The length of the longest message across all conversations.
+  int get messagesLenMax =>
+      _conversations.values.map((e) => e.lenMax).reduce(max);
 
   /// Create a new instance
   Stats(
@@ -107,6 +140,12 @@ class Stats extends StatisticsData {
   Map<String, dynamic> toMap() => {
         'conversationsTotal': conversationsTotal,
         'messagesTotal': messagesTotal,
+        'messagesCountMean': messagesCountMean,
+        'messagesLenMean': messagesLenMean,
+        'messagesLenStdDev': messagesLenStdDev,
+        'messagesLenTotal': messagesLenTotal,
+        'messagesLenMin': messagesLenMin,
+        'messagesLenMax': messagesLenMax,
         'conversations': <String, dynamic>{
           for (MapEntry<int, ConversationStats> convStats
               in _conversations.entries)
