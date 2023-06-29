@@ -67,7 +67,7 @@ class Stats extends StatisticsData {
   /// Generate stats for the conversation and add them to the data.
   void push(Conversation conversation) {
     _conversations[conversation.id] =
-        _generator.generateConversationStats(conversation);
+        _generator.conversationStats(conversation);
     _messagesTotal += conversation.messages.length;
     if (_config.enableVocabulary) {
       for (Message message in conversation.messages) {
@@ -80,7 +80,7 @@ class Stats extends StatisticsData {
   void pushAll(List<Conversation> conversations) {
     _conversations.addAll(LinkedHashMap.fromIterable(conversations,
         key: (element) => element.id,
-        value: (element) => _generator.generateConversationStats(element)));
+        value: (element) => _generator.conversationStats(element)));
     for (Conversation conversation in conversations) {
       _messagesTotal += conversation.messages.length;
       if (_config.enableVocabulary) {
@@ -129,37 +129,86 @@ class MessageStats extends StatisticsData {
   const MessageStats(this.id, this.length);
 
   /// Convert to json compatible map
-  Map<String, dynamic> toMap() => {if (id != null) 'id': id, 'length': length};
+  Map<String, dynamic> toMap() => {if (id != null) 'id': id, 'len': length};
 }
 
 /// Statistics for a [Conversation]
 @immutable
 class ConversationStats extends StatisticsData {
-  /// Messages in conversation
-  int get messagesTotal => messages.length;
-
-  /// Total length of content of all messages
-  int get lengthTotal => messages.sumBy((element) => element.length);
-
-  /// Average length of content of all messages
-  double get lengthAverage => lengthTotal / messagesTotal;
-
   /// Conversation id
   final int? id;
 
   /// Stats for each message in the conversation
   final IList<MessageStats> messages;
 
+  /// Messages in conversation
+  final int messagesCount;
+
+  /// Total length of content of all messages
+  final int lenTotal;
+
+  /// Average length of content of all messages
+  final double lenMean;
+
+  /// Median length of content of all messages
+  final num lenMedian;
+
+  /// Length of the shortest message
+  final int lenMin;
+
+  /// Length of the longest message
+  final int lenMax;
+
+  /// Range of the minimum and maximum values
+  final int lenRange;
+
+  /// Standard deviation
+  final double lenStdDev;
+
+  /// Extra stats to be included.
+  final Map<String, dynamic> extra;
+
   /// Create a new instance.
-  ConversationStats(this.id, Iterable<MessageStats> messages)
-      : messages = IList(messages);
+  ConversationStats(
+      {this.id,
+      required this.messages,
+      int? messagesCount,
+      required this.lenTotal,
+      required this.lenMin,
+      required this.lenMax,
+      required this.lenMean,
+      required this.lenMedian,
+      required this.lenRange,
+      required this.lenStdDev,
+      this.extra = const {}})
+      : messagesCount = messagesCount ?? messages.length;
+
+  /// Empty
+  ConversationStats.empty()
+      : id = 0,
+        messages = const IListConst([]),
+        messagesCount = 0,
+        lenTotal = 0,
+        lenMin = 0,
+        lenMax = 0,
+        lenMean = 0,
+        lenMedian = 0,
+        lenRange = 0,
+        lenStdDev = 0,
+        extra = const {};
 
   /// Convert to json compatible map
   Map<String, dynamic> toMap() => <String, dynamic>{
         if (id != null) 'id': id,
-        'messagesTotal': messagesTotal,
-        'lengthTotal': lengthTotal,
-        'lengthAverage': lengthAverage,
-        'messages': messages.map((element) => element.toMap()).toList()
+        'messagesCount': messagesCount,
+        'lenTotal': lenTotal,
+        'lenMin': lenMin,
+        'lenMax': lenMax,
+        'lenMean': lenMean,
+        'lenMedian': lenMedian,
+        'lenRange': lenRange,
+        'lenStdDev': lenStdDev,
+        'messages': messages.map((element) => element.toMap()).toList(),
+        ...extra
       };
 }
