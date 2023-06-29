@@ -150,8 +150,8 @@ class ConversationStats extends StatisticsData {
   /// Average length of content of all messages
   final double lenMean;
 
-  /// Median length of content of all messages
-  final num lenMedian;
+  /// Standard deviation
+  final double lenStdDev;
 
   /// Length of the shortest message
   final int lenMin;
@@ -159,11 +159,11 @@ class ConversationStats extends StatisticsData {
   /// Length of the longest message
   final int lenMax;
 
+  /// Median length of content of all messages
+  final num lenMedian;
+
   /// Range of the minimum and maximum values
   final int lenRange;
-
-  /// Standard deviation
-  final double lenStdDev;
 
   /// Extra stats to be included.
   final Map<String, dynamic> extra;
@@ -174,12 +174,12 @@ class ConversationStats extends StatisticsData {
       required this.messages,
       int? messagesCount,
       required this.lenTotal,
+      required this.lenMean,
+      required this.lenStdDev,
       required this.lenMin,
       required this.lenMax,
-      required this.lenMean,
       required this.lenMedian,
       required this.lenRange,
-      required this.lenStdDev,
       this.extra = const {}})
       : messagesCount = messagesCount ?? messages.length;
 
@@ -189,12 +189,12 @@ class ConversationStats extends StatisticsData {
         messages = const IListConst([]),
         messagesCount = 0,
         lenTotal = 0,
+        lenMean = 0,
+        lenStdDev = 0,
         lenMin = 0,
         lenMax = 0,
-        lenMean = 0,
         lenMedian = 0,
         lenRange = 0,
-        lenStdDev = 0,
         extra = const {};
 
   /// Convert to json compatible map
@@ -202,12 +202,12 @@ class ConversationStats extends StatisticsData {
         if (id != null) 'id': id,
         'messagesCount': messagesCount,
         'lenTotal': lenTotal,
+        'lenMean': lenMean,
+        'lenStdDev': lenStdDev,
         'lenMin': lenMin,
         'lenMax': lenMax,
-        'lenMean': lenMean,
         'lenMedian': lenMedian,
         'lenRange': lenRange,
-        'lenStdDev': lenStdDev,
         'messages': messages.map((element) => element.toMap()).toList(),
         ...extra
       };
