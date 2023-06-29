@@ -2,6 +2,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../statistics.dart';
 import '../../tokenizer.dart';
+import '../collection/sorted_list.dart';
 import '../conversation.dart';
 import '../math_extensions.dart';
 
@@ -54,10 +55,10 @@ class BaseStatsGenerator implements StatsGenerator {
         lenMin: sortedLengths.isEmpty ? 0 : sortedLengths.first,
         lenMax: sortedLengths.isEmpty ? 0 : sortedLengths.last,
         lenMean: lenTotal / sortedLengths.length,
-        lenMedian: sortedLengths.median(),
+        lenMedian: sortedLengths.median,
         lenRange: sortedLengths.last - sortedLengths.first,
         lenStdDev: sortedLengths.standardDeviation(
-            lenTotal / sortedLengths.length, true));
+            mean: lenTotal / sortedLengths.length, population: true));
   }
 
   @override
