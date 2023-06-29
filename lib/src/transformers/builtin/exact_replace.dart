@@ -25,27 +25,32 @@ class ExactReplace extends ConversationTransformer {
             (match: replacement[0], replace: replacement[1])
         ]),
         recursive = config['recursive'] ?? false {
-    List<String> keys = [for(var e in config['packedReplacements'] ?? []) e.toString()];
+    List<String> keys = [
+      for (var e in config['packedReplacements'] ?? []) e.toString()
+    ];
     replacements = replacements.addAll(_loadPackedReplacements(keys, cache));
   }
 
   @override
   String get description => "Simple substitution on exact match.";
 
-  static IList<({String match, String replace})> _loadPackedReplacements(List<String> keys, PackedDataCache? cache) {
-    if(cache == null) return const IListConst([]);
+  static IList<({String match, String replace})> _loadPackedReplacements(
+      List<String> keys, PackedDataCache? cache) {
+    if (cache == null) return const IListConst([]);
     List<({String match, String replace})> newReplacements = [];
-    for(String key in keys) {
+    for (String key in keys) {
       PackedData? data = cache[key];
-      if(data == null) {
+      if (data == null) {
         _log.warning("Unable to load packed replacements list '$key'");
         continue;
       }
       // Unpack, read as CSV, add to replacements list.
-      List<List<String>> csvData = CsvToListConverter().convert(String.fromCharCodes(data.unpack()));
-      newReplacements.addAll(csvData.map((List<String> e) =>
-        (match: e[0].toString().replaceAll(r"\n", "\n"), replace: e.length > 1 ? e[1].toString().replaceAll(r"\n", "\n") : '')
-      ));
+      List<List<String>> csvData =
+          CsvToListConverter().convert(String.fromCharCodes(data.unpack()));
+      newReplacements.addAll(csvData.map((List<String> e) => (
+            match: e[0].toString().replaceAll(r"\n", "\n"),
+            replace: e.length > 1 ? e[1].toString().replaceAll(r"\n", "\n") : ''
+          )));
     }
     return newReplacements.lockUnsafe;
   }
