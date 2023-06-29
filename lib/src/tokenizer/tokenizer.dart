@@ -17,7 +17,7 @@ import 'vocabulary_codec.dart';
 /// In general, this tokenizer is only concerned with how the tokenizer vocabulary relates to the dataset that is being processed.
 /// The output values of the default implementation are indices into the datasets vocabulary, sorted by their order of appearance.
 @immutable
-class Tokenizer<T> {
+abstract class Tokenizer<S, T> {
   /// The backing vocabulary.
   final Vocabulary<T> vocab;
 
@@ -34,13 +34,18 @@ class Tokenizer<T> {
   /// Create a new instance.
   const Tokenizer(this.vocab, {this.train = true, this.defaultToken = 0});
 
-  /// Clone this instance with new values.
-  Tokenizer<T> copyWith({Vocabulary<T>? vocab, bool? train}) =>
-      Tokenizer(vocab ?? this.vocab, train: train ?? this.train);
+  /// Tokenize input type [S] to [List]<[List]<[T]>> for output token type [T]
+  List<List<T>> tokenize(S input);
+
+  /// Tokenize the input and encode into a list of indices in the [Vocabulary]
+  List<List<int>> encode(S input);
+
+  /// Decode previously encoded values
+  S decode(List<List<int>> encoded);
 }
 
 /// A word level tokenizer.
-class WordTokenizer extends Tokenizer<String> {
+class WordTokenizer extends Tokenizer<String, String> {
   /// Default regex for splitting words into sub tokens
   static final RegExp defaultSplitWord =
       RegExp(r"[a-zA-Z]+|[0-9]|-|!|\.|_|:|=|'");
@@ -68,6 +73,7 @@ class WordTokenizer extends Tokenizer<String> {
   }
 
   /// Tokenize input string into a list of words and punctuation.
+  @override
   List<List<String>> tokenize(String input) {
     List<List<String>> output = allWords(input).map(wordParts).toList();
     if (_log.isLoggable(Level.FINEST)) {
@@ -76,7 +82,7 @@ class WordTokenizer extends Tokenizer<String> {
     return output;
   }
 
-  /// Encode string into a list of indices in the [Vocabulary]
+  @override
   List<List<int>> encode(String input) {
     return [
       for (List<String> wordParts in tokenize(input))
@@ -84,18 +90,18 @@ class WordTokenizer extends Tokenizer<String> {
     ];
   }
 
-  /// Encode pre-tokenized input.
-  List<List<int>> encodeTokenized(List<List<String>> input) {
-    return [
-      for (List<String> wordParts in input) wordParts.map(codec.encode).toList()
-    ];
-  }
-
-  /// Decode a list of previously encoded values
+  @override
   String decode(List<List<int>> encoded) {
     return encoded
         .map((List<int> word) => word.map(codec.decode).join(""))
         .toList()
         .join(" ");
+  }
+
+  /// Encode pre-tokenized input.
+  List<List<int>> encodeTokenized(List<List<String>> input) {
+    return [
+      for (List<String> wordParts in input) wordParts.map(codec.encode).toList()
+    ];
   }
 }
