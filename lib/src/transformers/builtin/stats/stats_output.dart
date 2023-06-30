@@ -53,9 +53,10 @@ class StatsOutput extends ConversationTransformer {
     // Prepare data
     Map<String, dynamic> result = stats.toMap();
     Map<String, dynamic>? vocab =
-        vocabFile != null ? result.remove('vocabulary') : null;
-    Map<String, dynamic>? conversations =
-        conversationsFile != null ? result.remove('conversations') : null;
+        vocabFile != null ? {'vocabulary': result.remove('vocabulary')} : null;
+    Map<String, dynamic>? conversations = conversationsFile != null
+        ? {'conversations': result.remove('conversations')}
+        : null;
 
     // Setup encoder
     JsonEncoder encoder = JsonEncoder.withIndent(indent);
