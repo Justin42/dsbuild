@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
@@ -63,4 +66,11 @@ class Vocabulary<T> {
 
   /// Returns an immutable copy of the vocabulary mapped in the form of [IMap]<[T],[int]> where the value is the indices in the vocabulary.
   IMap<T, int> toMap() => _tokens.index();
+}
+
+/// Functions to aid in the use of the vocabulary as a compression dictionary.
+extension AsCompressionDictionary on Vocabulary<String> {
+  /// Returns a list of all words, in reverse order, encoded as utf8, flattened.
+  List<int> toGzipDictionary() =>
+      _tokens.reversed.map(utf8.encode).flattened.toList(growable: false);
 }
