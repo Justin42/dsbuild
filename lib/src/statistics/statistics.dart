@@ -1,8 +1,9 @@
+// ignore_for_file: prefer_collection_literals
+
 import 'dart:collection';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
 import '../conversation.dart';
@@ -56,7 +57,8 @@ class Stats extends StatisticsData {
     if (_conversations.values.firstOrNull?.messages.isEmpty ?? true) return 0;
     double temp = 0;
     for (ConversationStats conversation in _conversations.values) {
-      for (var e in conversation.messages.map((element) => element.length)) {
+      for (var e
+          in conversation.messages.values.map((element) => element.length)) {
         temp += pow(e - mean, 2);
       }
     }
@@ -82,9 +84,7 @@ class Stats extends StatisticsData {
       addCommonTokens = true})
       : _generator = generator ??
             (config != null
-                ? BaseStatsGenerator(
-                    includeConversationIds: false,
-                    includeMessageIds: config.includeMessageIds)
+                ? BaseStatsGenerator()
                 : const BaseStatsGenerator()),
         _config = config ?? StatsConfig(),
         tokenizer = WordTokenizer(vocabulary ??
@@ -154,11 +154,8 @@ class Stats extends StatisticsData {
         'messagesLenTotal': messagesLenTotal,
         'messagesLenMin': messagesLenMin,
         'messagesLenMax': messagesLenMax,
-        'conversations': <String, dynamic>{
-          for (MapEntry<int, ConversationStats> convStats
-              in _conversations.entries)
-            convStats.key.toString(): convStats.value.toMap()
-        },
+        'conversations': _conversations
+            .map((key, value) => MapEntry(key.toString(), value.toMap())),
         'vocabulary': vocabulary.toMap().unlockView,
       };
 }
@@ -170,23 +167,23 @@ class MessageStats extends StatisticsData {
   final int length;
 
   /// Message id
-  final int? id;
+  final int id;
 
   /// Create a new instance
   const MessageStats(this.id, this.length);
 
   /// Convert to json compatible map
-  Map<String, dynamic> toMap() => {if (id != null) 'id': id, 'len': length};
+  Map<String, dynamic> toMap() => {'len': length};
 }
 
 /// Statistics for a [Conversation]
 @immutable
 class ConversationStats extends StatisticsData {
   /// Conversation id
-  final int? id;
+  final int id;
 
   /// Stats for each message in the conversation
-  final IList<MessageStats> messages;
+  final LinkedHashMap<int, MessageStats> messages;
 
   /// Messages in conversation
   final int messagesCount;
@@ -216,9 +213,8 @@ class ConversationStats extends StatisticsData {
   final Map<String, dynamic> extra;
 
   /// Create a new instance.
-  ConversationStats(
-      {this.id,
-      required this.messages,
+  ConversationStats(this.id,
+      {required this.messages,
       int? messagesCount,
       required this.lenTotal,
       required this.lenMean,
@@ -233,7 +229,7 @@ class ConversationStats extends StatisticsData {
   /// Empty
   ConversationStats.empty()
       : id = 0,
-        messages = const IListConst([]),
+        messages = LinkedHashMap(),
         messagesCount = 0,
         lenTotal = 0,
         lenMean = 0,
@@ -245,8 +241,8 @@ class ConversationStats extends StatisticsData {
         extra = const {};
 
   /// Convert to json compatible map
-  Map<String, dynamic> toMap() => <String, dynamic>{
-        if (id != null) 'id': id,
+  Map<String, dynamic> toMap([bool includeId = false]) => <String, dynamic>{
+        if (includeId) 'id': id,
         'messagesCount': messagesCount,
         'lenTotal': lenTotal,
         'lenMean': lenMean,
@@ -255,7 +251,8 @@ class ConversationStats extends StatisticsData {
         'lenMax': lenMax,
         'lenMedian': lenMedian,
         'lenRange': lenRange,
-        'messages': messages.map((element) => element.toMap()).toList(),
+        'messages': messages
+            .map((key, value) => MapEntry(key.toString(), value.toMap())),
         ...extra
       };
 }

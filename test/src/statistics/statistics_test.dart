@@ -10,8 +10,8 @@ void main() {
 
   Conversation conversation = Conversation(0.hashCode,
       messages: [
-        Message(
-            'human', 'This is only a test. Test. 7 Test-8 A. test_sauce27--=')
+        Message(0, 'human',
+            'This is only a test. Test. 7 Test-8 A. test_sauce27--=')
       ].lock);
 
   setUp(() async {

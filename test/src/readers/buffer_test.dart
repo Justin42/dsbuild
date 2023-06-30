@@ -3,10 +3,10 @@ import 'package:dsbuild/src/transformers/buffer.dart';
 import 'package:test/test.dart';
 
 final List<MessageEnvelope> testMessages = const [
-  MessageEnvelope(Message('Associate', 'Hello User!'), '0'),
-  MessageEnvelope(Message('User', 'Hello Associate!'), '0'),
-  MessageEnvelope(Message('Human', 'Hello GPT!'), '1'),
-  MessageEnvelope(Message('GPT', 'Hello Human!'), '1'),
+  MessageEnvelope(Message(0, 'Associate', 'Hello User!'), '0'),
+  MessageEnvelope(Message(1, 'User', 'Hello Associate!'), '0'),
+  MessageEnvelope(Message(2, 'Human', 'Hello GPT!'), '1'),
+  MessageEnvelope(Message(3, 'GPT', 'Hello Human!'), '1'),
 ];
 
 void main() {

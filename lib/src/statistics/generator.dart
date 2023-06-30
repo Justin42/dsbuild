@@ -1,4 +1,4 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'dart:collection';
 
 import '../../statistics.dart';
 import '../../tokenizer.dart';
@@ -24,31 +24,24 @@ abstract interface class StatsGenerator {
 
 /// An implementation of [StatsGenerator] for basic usage.
 class BaseStatsGenerator implements StatsGenerator {
-  /// Whether to include message Id's
-  final bool includeMessageIds;
-
-  /// Whether to include conversation Id's
-  final bool includeConversationIds;
-
   /// Word tokenizer for word counts and vocabulary
   final WordTokenizer? tokenizer;
 
   /// Create a new instance;
-  const BaseStatsGenerator(
-      {this.includeConversationIds = false,
-      this.includeMessageIds = true,
-      this.tokenizer});
+  const BaseStatsGenerator({this.tokenizer});
 
   @override
   ConversationStats conversationStats(Conversation conversation) {
-    IList<MessageStats> messages = List.generate(conversation.messages.length,
-        (index) => messageStats(conversation.messages[index])).lockUnsafe;
+    LinkedHashMap<int, MessageStats> messages = LinkedHashMap.fromIterable(
+        conversation.messages.map(messageStats).toList(),
+        key: (element) => element.id,
+        value: (element) => element);
+
     SortedList<int> sortedLengths =
-        messages.map((element) => element.length).toSortedList();
+        messages.values.map((e) => e.length).toSortedList();
 
     int lenTotal = sortedLengths.sum();
-    return ConversationStats(
-        id: includeConversationIds ? conversation.id : null,
+    return ConversationStats(conversation.id,
         messages: messages,
         messagesCount: messages.length,
         lenTotal: lenTotal,
@@ -63,7 +56,6 @@ class BaseStatsGenerator implements StatsGenerator {
 
   @override
   MessageStats messageStats(Message message) {
-    return MessageStats(
-        includeMessageIds ? message.id : null, message.value.length);
+    return MessageStats(message.id, message.value.length);
   }
 }

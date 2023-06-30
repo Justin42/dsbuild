@@ -59,29 +59,25 @@ class Message {
   final String value;
 
   /// Message identifier
-  final int? id;
+  final int id;
 
   /// Create a new message from [from] with [value]
-  const Message(this.from, this.value, [this.id]);
+  const Message(this.id, this.from, this.value);
 
   /// An empty message.
   const Message.empty()
       : from = '',
         value = '',
-        id = null;
+        id = -1;
 
   /// Convert to json-compatible map
   Map<String, dynamic> toMap([bool includeId = false]) {
-    return {
-      'from': from,
-      'value': value,
-      if (includeId && id != null) 'id': id
-    };
+    return {'from': from, 'value': value, if (includeId) 'id': id};
   }
 
   /// Create a copy of this instance with the supplied values.
-  Message copyWith({String? from, String? value, int? id}) =>
-      Message(from ?? this.from, value ?? this.value, id ?? this.id);
+  Message copyWith({int? id, String? from, String? value}) =>
+      Message(id ?? this.id, from ?? this.from, value ?? this.value);
 
   @override
   String toString() => "$from: $value";
