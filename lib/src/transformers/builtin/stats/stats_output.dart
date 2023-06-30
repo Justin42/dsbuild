@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dsbuild/src/tokenizer/vocabulary.dart';
+
 import '../../../conversation.dart';
 import '../../../statistics/statistics.dart';
 import '../../conversation_transformer.dart';
@@ -19,6 +21,12 @@ class StatsOutput extends ConversationTransformer {
   /// Separate output for conversations
   final File? conversationsFile;
 
+  /// Whether to gzip the separate conversations file
+  final bool gzipConversations;
+
+  /// Whether to gzip the separate vocabulary file
+  final bool gzipVocabulary;
+
   /// Json output indent for pretty printing
   final String indent;
 
@@ -31,6 +39,8 @@ class StatsOutput extends ConversationTransformer {
         conversationsFile = config['conversationsPath'] != null
             ? File(config['conversationsPath'])
             : null,
+        gzipConversations = config['gZipConversations'] ?? true,
+        gzipVocabulary = config['gZipVocabulary'] ?? true,
         indent = config['indent'] ?? ' ';
 
   @override
@@ -49,21 +59,41 @@ class StatsOutput extends ConversationTransformer {
 
     // Setup encoder
     JsonEncoder encoder = JsonEncoder.withIndent(indent);
+    GZipCodec? gZipCodecVocabulary;
 
     // Write output files
-    for ((File, Map<String, dynamic>) out in [
+    for ((File, Map<String, dynamic>, bool shouldGzip, bool gzipWithVocab) out
+        in [
       // Main
-      (file, result),
+      (file, result, false, false),
       // Vocab
-      if (vocabFile != null) (vocabFile!, vocab ?? <String, dynamic>{}),
+      if (vocabFile != null)
+        (vocabFile!, vocab ?? <String, dynamic>{}, gzipVocabulary, false),
       // Conversation
       if (conversationsFile != null)
-        (conversationsFile!, conversations ?? <String, dynamic>{})
+        (
+          conversationsFile!,
+          conversations ?? <String, dynamic>{},
+          gzipConversations,
+          false
+        )
     ]) {
-      var (File outputFile, outputData) = out;
+      var (File outputFile, outputData, bool shouldGzip, bool gzipWithVocab) =
+          out;
       await outputFile.create(recursive: true);
       IOSink output = outputFile.openWrite();
-      output.write(encoder.convert(outputData));
+      String jsonData = encoder.convert(outputData);
+      if (shouldGzip) {
+        if (gzipWithVocab) {
+          gZipCodecVocabulary = gZipCodecVocabulary ??
+              GZipCodec(dictionary: stats.vocabulary.toGzipDictionary());
+          output.add(gZipCodecVocabulary.encode(utf8.encode(jsonData)));
+        } else {
+          output.add(gzip.encode(utf8.encode(jsonData)));
+        }
+      } else {
+        output.write(jsonData);
+      }
       await output.flush();
       await output.close();
     }
