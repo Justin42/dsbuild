@@ -13,7 +13,15 @@ final List<String> digitTokens = const [
 ];
 
 /// Punctuation
-final List<String> punctuationTokens = const ['.', '!', '-', '_', ':', '='];
+final List<String> punctuationTokens = const [
+  '.',
+  '!',
+  '-',
+  '_',
+  ':',
+  '=',
+  "'",
+];
 
 /// Special tokens
 final List<String> specialTokens = const [
