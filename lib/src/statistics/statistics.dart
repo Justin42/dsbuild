@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:dsbuild/src/math_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
@@ -25,6 +24,7 @@ class Stats extends StatisticsData {
   final StatsGenerator _generator;
 
   int _messagesTotal = 0;
+  int _messagesLenTotal = 0;
 
   /// Configuration for stats.
   StatsConfig get config => _config;
@@ -45,26 +45,26 @@ class Stats extends StatisticsData {
   int get messagesTotal => _messagesTotal;
 
   /// The average message count across all conversations.
-  double get messagesCountMean => [
-        for (ConversationStats conversation in _conversations.values)
-          conversation.messagesCount
-      ].toList(growable: false).average;
+  double get messagesCountMean => _messagesTotal / _conversations.length;
 
   /// The average length of messages across all conversations.
-  double get messagesLenMean => [
-        for (ConversationStats conversation in _conversations.values)
-          conversation.lenMean
-      ].toList(growable: false).average;
+  double get messagesLenMean => _messagesLenTotal / _messagesTotal;
 
   /// The standard deviation of the length of messages across all conversations.
-  double get messagesLenStdDev => [
-        for (ConversationStats conversation in _conversations.values)
-          conversation.lenTotal
-      ].toList(growable: false).standardDeviation(population: true);
+  double get messagesLenStdDev {
+    double mean = messagesLenMean;
+    if (_conversations.values.firstOrNull?.messages.isEmpty ?? true) return 0;
+    double temp = 0;
+    for (ConversationStats conversation in _conversations.values) {
+      for (var e in conversation.messages.map((element) => element.length)) {
+        temp += pow(e - mean, 2);
+      }
+    }
+    return sqrt(temp / _messagesTotal);
+  }
 
   /// Total length of all messages.
-  int get messagesLenTotal =>
-      _conversations.values.fold(0, (total, e) => total + e.lenTotal);
+  int get messagesLenTotal => _messagesLenTotal;
 
   /// The length of the shortest message across all conversations.
   int get messagesLenMin =>
@@ -99,9 +99,10 @@ class Stats extends StatisticsData {
 
   /// Generate stats for the conversation and add them to the data.
   void push(Conversation conversation) {
-    _conversations[conversation.id] =
-        _generator.conversationStats(conversation);
-    _messagesTotal += conversation.messages.length;
+    ConversationStats stats = _generator.conversationStats(conversation);
+    _conversations[conversation.id] = stats;
+    _messagesTotal += stats.messagesCount;
+    _messagesLenTotal += stats.lenTotal;
     if (_config.enableVocabulary) {
       for (Message message in conversation.messages) {
         tokenizer.encode(message.value);
@@ -111,12 +112,19 @@ class Stats extends StatisticsData {
 
   /// See [push]
   void pushAll(List<Conversation> conversations) {
-    _conversations.addAll(LinkedHashMap.fromIterable(conversations,
-        key: (element) => element.id,
-        value: (element) => _generator.conversationStats(element)));
-    for (Conversation conversation in conversations) {
-      _messagesTotal += conversation.messages.length;
-      if (_config.enableVocabulary) {
+    LinkedHashMap<int, ConversationStats> conversationStats =
+        LinkedHashMap<int, ConversationStats>.fromIterable(conversations,
+            key: (element) => element.id,
+            value: (element) => _generator.conversationStats(element));
+    _conversations.addAll(conversationStats);
+
+    for (ConversationStats stats in conversationStats.values) {
+      _messagesTotal += stats.messagesCount;
+      _messagesLenTotal += stats.lenTotal;
+    }
+
+    if (_config.enableVocabulary) {
+      for (Conversation conversation in conversations) {
         for (Message message in conversation.messages) {
           tokenizer.encode(message.value);
         }
