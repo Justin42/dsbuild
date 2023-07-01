@@ -32,6 +32,9 @@ class BaseStatsGenerator implements StatsGenerator {
 
   @override
   ConversationStats conversationStats(Conversation conversation) {
+    if (conversation.messages.isEmpty) {
+      return ConversationStats.empty();
+    }
     LinkedHashMap<int, MessageStats> messages = LinkedHashMap.fromIterable(
         conversation.messages.map(messageStats).toList(),
         key: (element) => element.id,
@@ -45,8 +48,8 @@ class BaseStatsGenerator implements StatsGenerator {
         messages: messages,
         messagesCount: messages.length,
         lenTotal: lenTotal,
-        lenMin: sortedLengths.isEmpty ? 0 : sortedLengths.first,
-        lenMax: sortedLengths.isEmpty ? 0 : sortedLengths.last,
+        lenMin: sortedLengths.first,
+        lenMax: sortedLengths.last,
         lenMean: lenTotal / sortedLengths.length,
         lenMedian: sortedLengths.median,
         lenRange: sortedLengths.last - sortedLengths.first,

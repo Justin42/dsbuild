@@ -28,6 +28,9 @@ extension NumericIterable<E extends num> on Iterable<E> {
 extension SortedNumericList on SortedList<num> {
   /// Calculate the median of a presorted list of num.
   num get median {
+    if (length == 0) {
+      throw StateError("Cannot calculate the median of a zero length list");
+    }
     int middle = length ~/ 2;
     if (length % 2 == 1) {
       return this[middle];
