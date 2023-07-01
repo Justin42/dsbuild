@@ -72,7 +72,7 @@ class Message {
 
   /// Convert to json-compatible map
   Map<String, dynamic> toMap([bool includeId = false]) {
-    return {'from': from, 'value': value, if (includeId) 'id': id};
+    return {if (includeId) 'id': id, 'from': from, 'value': value};
   }
 
   /// Create a copy of this instance with the supplied values.

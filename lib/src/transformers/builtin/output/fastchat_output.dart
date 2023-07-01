@@ -18,10 +18,14 @@ class FastChatOutput extends ConversationTransformer {
   /// Indents
   final int indent;
 
+  /// Include message ids
+  final bool includeMessageId;
+
   /// Create a new instance
   FastChatOutput(super.config)
       : indent = config['indent'] ?? 0,
-        file = File(config['path'].toString());
+        file = File(config['path'].toString()),
+        includeMessageId = config['includeMessageId'] ?? false;
 
   @override
   Stream<List<Conversation>> bind(Stream<List<Conversation>> stream) async* {
@@ -37,7 +41,8 @@ class FastChatOutput extends ConversationTransformer {
         if (buffer.isEmpty) {
           buffer.write(encoder.convert({
             'id': conversation.id,
-            'conversations': conversation.messages.toJson((p0) => p0.toMap())
+            'conversations':
+                conversation.messages.toJson((p0) => p0.toMap(includeMessageId))
           }));
         } else {
           ioSink.write(buffer);
@@ -45,7 +50,8 @@ class FastChatOutput extends ConversationTransformer {
           buffer.clear();
           buffer.write(encoder.convert({
             'id': conversation.id,
-            'conversations': conversation.messages.toJson((p0) => p0.toMap())
+            'conversations':
+                conversation.messages.toJson((p0) => p0.toMap(includeMessageId))
           }));
         }
       }

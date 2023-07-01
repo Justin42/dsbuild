@@ -10,6 +10,9 @@ import '../../conversation_transformer.dart';
 
 /// Valid message fields for CSV output
 enum Field {
+  /// [Message.id]
+  message,
+
   /// [Conversation.id]
   conversation,
 
@@ -87,13 +90,14 @@ class CsvOutput extends ConversationTransformer {
     await for (List<Conversation> conversations in stream) {
       for (Conversation conversation in conversations) {
         for (Message message in conversation.messages) {
-          List<String> newRow = [];
+          List newRow = [];
           for (Field field in fields) {
             newRow.add(switch (field) {
-              Field.conversation => conversation.id.toString(),
+              Field.message => message.id,
+              Field.conversation => conversation.id,
               Field.from => message.from,
               Field.value => message.value,
-              Field.hash => message.hashCode.toString(),
+              Field.hash => message.hashCode,
             });
           }
           String? row = csv.convertSingleRow(sb, newRow);
