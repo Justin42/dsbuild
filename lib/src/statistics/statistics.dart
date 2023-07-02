@@ -183,7 +183,7 @@ class ConversationStats extends StatisticsData {
   final int id;
 
   /// Stats for each message in the conversation
-  final LinkedHashMap<int, MessageStats> messages;
+  final Map<int, MessageStats> messages;
 
   /// Messages in conversation
   final int messagesCount;
@@ -227,9 +227,9 @@ class ConversationStats extends StatisticsData {
       : messagesCount = messagesCount ?? messages.length;
 
   /// Empty
-  ConversationStats.empty()
-      : id = 0,
-        messages = LinkedHashMap(),
+  const ConversationStats.empty()
+      : id = -1,
+        messages = const <int, MessageStats>{},
         messagesCount = 0,
         lenTotal = 0,
         lenMean = 0,
