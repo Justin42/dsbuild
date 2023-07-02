@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
@@ -29,7 +30,7 @@ abstract class Tokenizer<S, T> {
   final int defaultToken;
 
   /// Get a codec for tokenization.
-  VocabularyCodec<T> get codec => VocabularyCodec(vocab, train);
+  VocabularyCodec<T> get codec => VocabularyCodec(vocab);
 
   /// Create a new instance.
   const Tokenizer(this.vocab, {this.train = true, this.defaultToken = 0});
@@ -79,6 +80,7 @@ class WordTokenizer extends Tokenizer<String, String> {
     if (_log.isLoggable(Level.FINEST)) {
       _log.finest('$input => $output');
     }
+    if (train) vocab.addAll(output.flattened);
     return output;
   }
 

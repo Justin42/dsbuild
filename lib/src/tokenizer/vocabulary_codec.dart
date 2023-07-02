@@ -7,14 +7,11 @@ class VocabularyCodec<T> implements Codec<T, int> {
   /// Backing data.
   final Vocabulary<T> vocab;
 
-  /// Whether new data should be written to the vocabulary.
-  final bool train;
-
   /// Value to replace unknown tokens with when encoding if [train] is false.
   static final int unk = 0;
 
   /// Create a new instance.
-  const VocabularyCodec(this.vocab, [this.train = true]);
+  const VocabularyCodec(this.vocab);
 
   @override
   T decode(int encoded) => decoder.convert(encoded);
@@ -26,7 +23,7 @@ class VocabularyCodec<T> implements Codec<T, int> {
   int encode(T input) => encoder.convert(input);
 
   @override
-  Converter<T, int> get encoder => VocabularyEncoder(vocab, train, unk);
+  Converter<T, int> get encoder => VocabularyEncoder(vocab, unk);
 
   @override
   // TODO: implement fuse
@@ -60,19 +57,15 @@ class VocabularyDecoder<T> extends Converter<int, T> {
 class VocabularyEncoder<T> extends Converter<T, int> {
   final Vocabulary<T> _vocab;
 
-  /// Whether to add new tokens to to the vocabulary
-  final bool train;
-
   /// Unknown token index
   final int unknown;
 
   /// Create a new instance
-  const VocabularyEncoder(Vocabulary<T> vocab,
-      [this.train = true, this.unknown = -1])
+  const VocabularyEncoder(Vocabulary<T> vocab, [this.unknown = -1])
       : _vocab = vocab;
 
   @override
   int convert(T input) {
-    return _vocab.getIndex(input, train) ?? this.unknown;
+    return _vocab.getIndex(input) ?? this.unknown;
   }
 }
