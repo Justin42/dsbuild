@@ -2,6 +2,9 @@
 
 - Better progress display.
 - No longer hash required files when `build.verifyRequirements` is false.
+- `StatsOutput` transformer
+- API for generating statistics, allows implementing custom generators.
+- Simple tokenizer, provides vocabulary and word counts for statistics.
 
 ---
 *0.1.0-alpha.5:*
