@@ -49,6 +49,10 @@ void main() {
       expect(stats.tokensMean, 0);
       expect(stats.wordsMin, 0);
       expect(stats.wordsMax, 0);
+      expect(stats.messagesCountMean, 0);
+      expect(stats.messagesLenMean, 0);
+      expect(stats.messagesLenStdDev, 0);
+      expect(stats.wordsMean, 0);
     });
   });
 }

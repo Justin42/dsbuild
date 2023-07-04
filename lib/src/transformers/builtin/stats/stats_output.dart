@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dsbuild/src/tokenizer/vocabulary.dart';
+import 'package:logging/logging.dart';
 
 import '../../../conversation.dart';
 import '../../../statistics/statistics.dart';
 import '../../conversation_transformer.dart';
+
+final Logger _log = Logger("dsbuild/StatsOutput");
 
 /// Collect statistics for all conversations.
 class StatsOutput extends ConversationTransformer {

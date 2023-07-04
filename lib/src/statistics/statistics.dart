@@ -48,15 +48,17 @@ class Stats extends StatisticsData {
   int get messagesTotal => _messagesTotal;
 
   /// The average message count across all conversations.
-  double get messagesCountMean => _messagesTotal / _conversations.length;
+  double get messagesCountMean =>
+      _conversations.isEmpty ? 0 : _messagesTotal / _conversations.length;
 
   /// The average length of messages across all conversations.
-  double get messagesLenMean => _messagesLenTotal / _messagesTotal;
+  double get messagesLenMean =>
+      _conversations.isEmpty ? 0 : _messagesLenTotal / _messagesTotal;
 
   /// The standard deviation of the length of messages across all conversations.
   double get messagesLenStdDev {
     double mean = messagesLenMean;
-    if (_conversations.values.firstOrNull?.messages.isEmpty ?? true) return 0;
+    if (_conversations.isEmpty) return 0;
     double temp = 0;
     for (ConversationStats conversation in _conversations.values) {
       for (var e
@@ -71,18 +73,21 @@ class Stats extends StatisticsData {
   int get messagesLenTotal => _messagesLenTotal;
 
   /// The length of the shortest message across all conversations.
-  int get messagesLenMin =>
-      _conversations.values.map((e) => e.lenMin).reduce(min);
+  int get messagesLenMin => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.lenMin).reduce(min);
 
   /// The length of the longest message across all conversations.
-  int get messagesLenMax =>
-      _conversations.values.map((e) => e.lenMax).reduce(max);
+  int get messagesLenMax => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.lenMax).reduce(max);
 
   /// Total words across all conversations
   int get wordsTotal => _wordsTotal;
 
   /// Mean of word count across all conversations
-  double get wordsMean => _wordsTotal / _messagesTotal;
+  double get wordsMean =>
+      _conversations.isEmpty ? 0 : _wordsTotal / _messagesTotal;
 
   /// Standard deviation of the word count of messages across all conversations.
   double get wordsStdDev {
