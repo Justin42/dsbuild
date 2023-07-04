@@ -132,7 +132,7 @@ class Stats extends StatisticsData {
       ? 0
       : _conversations.values.map((e) => e.tokensMin ?? 0).reduce(min);
 
-  /// Maxmimum token count of any message across all conversations
+  /// Maximum token count of any message across all conversations
   int get tokensMax => _conversations.isEmpty
       ? 0
       : _conversations.values.map((e) => e.tokensMax ?? 0).reduce(max);
