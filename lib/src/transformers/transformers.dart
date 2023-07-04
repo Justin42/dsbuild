@@ -38,7 +38,8 @@ Map<String, ConversationTransformerBuilderFn> defaultTransformers() => {
       'ExactReplace': (config, progress, cache) =>
           ExactReplace(config, cache: cache),
       'FullMatch': (config, progress, cache) => FullMatch(config),
-      'FastChatInput': (config, progress, cache) => FastChatInput(config),
+      'FastChatInput': (config, progress, cache) =>
+          FastChatInput(config, progress: progress),
       'FastChatOutput': (config, progress, cache) => FastChatOutput(config),
       'FileConcatenate': (config, progress, cache) => FileConcatenate(config),
       'RawOutput': (config, progress, cache) => RawOutput(config),

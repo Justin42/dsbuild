@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
+import '../../../../progress.dart';
 import '../../../conversation.dart';
 import '../../transformers.dart';
 
@@ -13,7 +14,8 @@ class FastChatInput extends ConversationTransformer {
   final String path;
 
   /// Create new instance
-  FastChatInput(super.config) : path = config['path'].toString();
+  FastChatInput(super.config, {super.progress})
+      : path = config['path'].toString();
 
   @override
   // TODO: implement description
@@ -34,6 +36,8 @@ class FastChatInput extends ConversationTransformer {
             ].lock,
             meta: IMap({'inputId': conversation['id']}))
       ]);
+      progress?.add(ConversationRead(count: 1));
+      progress?.add(MessageRead(count: conversation['conversations'].length));
     }));
   }
 }
