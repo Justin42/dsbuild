@@ -40,5 +40,15 @@ void main() {
       );
       expect(nonEncodableObjects, [], reason: "Not all objects are encodable");
     });
+
+    test('empty', () async {
+      final Stats stats = Stats();
+      expect(stats.tokensMin, 0);
+      expect(stats.tokensMax, 0);
+      expect(stats.tokensTotal, 0);
+      expect(stats.tokensMean, 0);
+      expect(stats.wordsMin, 0);
+      expect(stats.wordsMax, 0);
+    });
   });
 }

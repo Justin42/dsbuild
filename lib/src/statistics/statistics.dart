@@ -99,17 +99,20 @@ class Stats extends StatisticsData {
   }
 
   /// The minimum word count of any message across all conversations.
-  int get wordsMin =>
-      _conversations.values.map((e) => e.wordsMin ?? 0).reduce(min);
+  int get wordsMin => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.wordsMin ?? 0).reduce(min);
 
   /// The maximum word count of any message across all conversations.
-  int get wordsMax =>
-      _conversations.values.map((e) => e.wordsMax ?? 0).reduce(max);
+  int get wordsMax => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.wordsMax ?? 0).reduce(max);
 
   /// The total token count across all conversations
   int get tokensTotal => _tokensTotal;
 
-  double get tokensMean => _tokensTotal / _messagesTotal;
+  double get tokensMean =>
+      _conversations.isEmpty ? 0 : _tokensTotal / _messagesTotal;
 
   double get tokensStdDev {
     double mean = tokensMean;
@@ -125,12 +128,14 @@ class Stats extends StatisticsData {
   }
 
   /// Minimum token count of any message across all conversations
-  int get tokensMin =>
-      _conversations.values.map((e) => e.tokensMin ?? 0).reduce(min);
+  int get tokensMin => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.tokensMin ?? 0).reduce(min);
 
   /// Maxmimum token count of any message across all conversations
-  int get tokensMax =>
-      _conversations.values.map((e) => e.tokensMax ?? 0).reduce(max);
+  int get tokensMax => _conversations.isEmpty
+      ? 0
+      : _conversations.values.map((e) => e.tokensMax ?? 0).reduce(max);
 
   /// Create a new instance
   Stats(
