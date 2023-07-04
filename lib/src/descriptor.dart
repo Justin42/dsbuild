@@ -207,7 +207,9 @@ class StepDescriptor {
 
   /// Create a new instance from a Yaml map
   StepDescriptor.fromYaml(YamlMap data)
-      : type = data['type'],
+      : type = data['type'] ??
+            (throw FormatException(
+                "'type' for step is missing or invalid: $data")),
         description = data['description'] ?? '',
         pack = [for (String name in data['pack'] ?? []) name.toString()],
         _sync = data['sync'],
