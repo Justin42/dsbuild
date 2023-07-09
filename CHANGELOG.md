@@ -2,7 +2,7 @@
 
 - Better progress display.
 - No longer hash required files when `build.verifyRequirements` is false.
-- `StatsOutput` transformer
+- `StatsOutput` and `StatsConversationPrune` transformers
 - API for generating statistics, allows implementing custom generators.
 - Simple tokenizer, provides vocabulary and word counts for statistics.
 

@@ -1,3 +1,5 @@
+import 'package:dsbuild/src/transformers/builtin/stats/stats_prune.dart';
+
 import '';
 
 export 'builtin/encoding.dart' show Encoding;
@@ -48,5 +50,7 @@ Map<String, ConversationTransformerBuilderFn> defaultTransformers() => {
           StatsCountOccurrences(config, cache: cache),
       'StatsAddColMerge': (config, progress, cache) => StatsAddColMerge(config),
       'StatsOutput': (config, progress, cache) => StatsOutput(config),
+      'StatsConversationPrune': (config, progress, cache) =>
+          StatsConversationPrune(config, cache: cache),
       'RawSampleOutput': (config, progress, cache) => RawSampleOutput(config),
     };

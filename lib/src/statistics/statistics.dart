@@ -35,6 +35,9 @@ class Stats extends StatisticsData {
   /// Conversation statistics, mapped by [Conversation.id]
   final LinkedHashMap<int, ConversationStats> _conversations = LinkedHashMap();
 
+  /// Get conversation stats by id
+  ConversationStats? getConversation(int id) => _conversations[id];
+
   /// Total unique words
   final WordTokenizer tokenizer;
 
@@ -241,6 +244,24 @@ class Stats extends StatisticsData {
             .map((key, value) => MapEntry(key.toString(), value.toMap())),
         'vocabulary': vocabulary.toMap().unlockView,
       };
+
+  /// Convert from json compatible map. See [toMap]
+  factory Stats.fromMap(Map<String, dynamic> data) {
+    Stats stats = Stats();
+    stats._conversations.addAll(<int, ConversationStats>{
+      for (MapEntry entry
+          in (data['conversations'] as Map<String, dynamic>).entries)
+        int.parse(entry.key): ConversationStats.fromMap(
+            {'id': int.parse(entry.key), ...entry.value})
+    });
+    for (ConversationStats conversationStats in stats._conversations.values) {
+      stats._messagesTotal += conversationStats.messagesCount;
+      stats._messagesLenTotal += conversationStats.lenTotal;
+      stats._wordsTotal += conversationStats.wordsTotal ?? 0;
+      stats._tokensTotal += conversationStats.tokensTotal ?? 0;
+    }
+    return stats;
+  }
 }
 
 /// Statistics for a single [Message]
@@ -272,6 +293,14 @@ class MessageStats extends StatisticsData {
         if (tokenCount != null) 'tokenCount': tokenCount,
         ...extras,
       };
+
+  /// Convert from json compatible map
+  factory MessageStats.fromMap(Map<String, dynamic> data) {
+    return MessageStats(data['id'], data['len'],
+        wordCount: data['wordCount'],
+        tokenCount: data['tokenCount'],
+        extras: data['extras'] ?? const {});
+  }
 }
 
 /// Statistics for a [Conversation]
@@ -412,4 +441,35 @@ class ConversationStats extends StatisticsData {
             .map((key, value) => MapEntry(key.toString(), value.toMap())),
         ...extra
       };
+
+  /// Convert from json compatible map
+  factory ConversationStats.fromMap(Map<String, dynamic> data) {
+    Map<int, MessageStats> messages = {
+      for (MapEntry entry in data['messages'].entries)
+        int.parse(entry.key):
+            MessageStats.fromMap({'id': int.parse(entry.key), ...entry.value})
+    };
+    return ConversationStats(data['id'],
+        messages: messages,
+        lenTotal: data['lenTotal'],
+        lenMean: data['lenMean'],
+        lenStdDev: data['lenStdDev'],
+        lenMin: data['lenMin'],
+        lenMax: data['lenMax'],
+        lenMedian: data['lenMedian'],
+        lenRange: data['lenRange'],
+        wordsTotal: data['wordsTotal'],
+        wordsMean: data['wordsMean'],
+        wordsMin: data['wordsMin'],
+        wordsMax: data['wordsMax'],
+        wordsMedian: data['wordsMedian'],
+        wordsRange: data['wordsRange'],
+        tokensTotal: data['tokensTotal'],
+        tokensMean: data['tokensMean'],
+        tokensStdDev: data['tokensStdDev'],
+        tokensMin: data['tokensMin'],
+        tokensMax: data['tokensMax'],
+        tokensMedian: data['tokensMedian'],
+        tokensRange: data['tokensRange']);
+  }
 }
